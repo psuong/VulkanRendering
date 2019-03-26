@@ -33,11 +33,12 @@ namespace vulkan_rendering {
 	}
 
 	void TriangleApp::cleanup() {
+		vkDestroyInstance(instance, nullptr);
 		glfwDestroyWindow(window);
 		glfwTerminate();
 	}
 
-	void TriangleApp::create_instance() {
+	void inline TriangleApp::create_instance() {
 		VkApplicationInfo app_info  = {};
 		app_info.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		app_info.pApplicationName   = "Triangle App";
@@ -61,5 +62,30 @@ namespace vulkan_rendering {
 		if (vkCreateInstance(&create_info, nullptr, &instance) != VK_SUCCESS) {
 			throw std::runtime_error("Failed to create VkInstance!");
 		}
+	}
+
+	bool inline TriangleApp::check_validation_support() {
+		uint32_t layer_count;
+		vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
+
+		std::vector<VkLayerProperties> available_layers(layer_count);
+		vkEnumerateInstanceLayerProperties(&layer_count, available_layers.data());
+
+		for (const auto layer_name : validation_layers) {
+			bool is_found = false;
+
+			for (const auto layer_properties : available_layers) {
+				if (strcmp(layer_name, layer_properties.layerName) == 0) {
+					is_found = true;
+					break;
+				}
+			}
+
+			if (!is_found) {
+				return false;
+			}
+		}
+
+		return true;
 	}
 }
