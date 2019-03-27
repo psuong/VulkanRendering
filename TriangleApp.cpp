@@ -39,7 +39,7 @@ namespace vulkan_rendering {
 	}
 
 	void inline TriangleApp::create_instance() {
-		if (enable_validation_layers && !check_validation_support) {
+		if (enable_validation_layers && !check_validation_support()) {
 			throw std::runtime_error("Validation layers requested but not available!");
 		}
 
@@ -62,6 +62,10 @@ namespace vulkan_rendering {
 		create_info.enabledExtensionCount   = glfw_extension_count;
 		create_info.ppEnabledExtensionNames = glfw_extension;
 		create_info.enabledLayerCount       = 0;
+
+		auto extensions = get_required_extensions();
+		create_info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+		create_info.ppEnabledExtensionNames = extensions.data();
 
 		if (enable_validation_layers) {
 			create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
@@ -99,5 +103,27 @@ namespace vulkan_rendering {
 		}
 
 		return true;
+	}
+
+	std::vector<const char*> TriangleApp::get_required_extensions() {
+		uint32_t extension_count = 0;
+		const char** glfw_extensions = glfwGetRequiredInstanceExtensions(&extension_count);
+		std::vector<const char*> extensions(glfw_extensions, glfw_extensions + extension_count);
+
+		if (enable_validation_layers) {
+			extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		}
+
+		return extensions;
+	}
+
+	VKAPI_ATTR VkBool32 VKAPI_CALL TriangleApp::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 
+		VkDebugUtilsMessageTypeFlagsEXT messageType, 
+		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, 
+		void* pUserData) {
+
+		std::cerr << "validation layers" << pCallbackData->pMessage << std::endl;
+
+		return VK_FALSE;
 	}
 }

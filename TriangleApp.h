@@ -35,6 +35,11 @@ namespace vulkan_rendering {
 		void inline create_instance();
 		bool inline check_validation_support();
 		std::vector<const char*> get_required_extensions();
+		
+		static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+			VkDebugUtilsMessageTypeFlagsEXT messageType,
+			const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+			void* pUserData);
 	};
 }
 
