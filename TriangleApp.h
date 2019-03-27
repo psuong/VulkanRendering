@@ -34,6 +34,7 @@ namespace vulkan_rendering {
 		void cleanup();
 		void inline create_instance();
 		bool inline check_validation_support();
+		std::vector<const char*> get_required_extensions();
 	};
 }
 

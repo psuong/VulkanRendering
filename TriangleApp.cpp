@@ -39,6 +39,10 @@ namespace vulkan_rendering {
 	}
 
 	void inline TriangleApp::create_instance() {
+		if (enable_validation_layers && !check_validation_support) {
+			throw std::runtime_error("Validation layers requested but not available!");
+		}
+
 		VkApplicationInfo app_info  = {};
 		app_info.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
 		app_info.pApplicationName   = "Triangle App";
@@ -58,6 +62,14 @@ namespace vulkan_rendering {
 		create_info.enabledExtensionCount   = glfw_extension_count;
 		create_info.ppEnabledExtensionNames = glfw_extension;
 		create_info.enabledLayerCount       = 0;
+
+		if (enable_validation_layers) {
+			create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+			create_info.ppEnabledLayerNames = validation_layers.data();
+		}
+		else {
+			create_info.enabledLayerCount = 0;
+		}
 
 		if (vkCreateInstance(&create_info, nullptr, &instance) != VK_SUCCESS) {
 			throw std::runtime_error("Failed to create VkInstance!");
