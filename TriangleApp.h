@@ -40,6 +40,8 @@ namespace vulkan_rendering {
 			"VK_LAYER_LUNARG_standard_validation"
 		};
 
+		VkPhysicalDevice device;
+
 #if NDEBUG
 		const bool enable_validation_layers = false;
 #else
@@ -55,6 +57,7 @@ namespace vulkan_rendering {
 		void main_loop();
 		void cleanup();
 		void setup_debugger();
+		void select_physical_device();
 		void inline create_instance();
 		bool inline check_validation_support();
 		std::vector<const char*> get_required_extensions();

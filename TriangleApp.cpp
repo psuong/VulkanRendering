@@ -24,6 +24,7 @@ namespace vulkan_rendering {
 	void TriangleApp::init_vulkan() {
 		create_instance();
 		setup_debugger();
+		select_physical_device();
 	}
 
 	void TriangleApp::main_loop() {
@@ -154,6 +155,24 @@ namespace vulkan_rendering {
 
 		if (Create_Debug_Utils_Messenger(instance, &create_info, nullptr, &debug_messenger)) {
 			throw new std::runtime_error("Failed to set up the debugger!");
+		}
+	}
+
+	void TriangleApp::select_physical_device() {
+		VkPhysicalDevice device = VK_NULL_HANDLE;
+		uint32_t device_count = 0;
+		vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
+		if (device_count == 0) {
+			throw std::runtime_error("Failed to find a GPU that supports Vulkan!");
+		}
+
+		std::vector<VkPhysicalDevice> devices(device_count);
+		vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
+
+		for (const auto& d : devices) {
+			// TODO: Add a conditional check, possibly pass that as a lambda expression
+			device = d;
+			break;
 		}
 	}
 }
