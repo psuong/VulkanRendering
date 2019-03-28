@@ -6,9 +6,30 @@
 #include <vulkan/vulkan.h>
 
 namespace vulkan_rendering {
-	
+
+	// Extensions function to create the debuging messenger
+	static VkResult Create_Debug_Utils_Messenger(
+		VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+		const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
+		auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+		if (func != nullptr) {
+			return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+		}
+		else {
+			return VK_ERROR_EXTENSION_NOT_PRESENT;
+		}
+	}
+
+	static void Destroy_Debug_Utils_Messenger(
+		VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
+		auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+		if (func != nullptr) {
+			func(instance, debugMessenger, pAllocator);
+		}
+	}
+
 	class TriangleApp {
-		
+
 	public:
 		void run();
 
@@ -27,15 +48,17 @@ namespace vulkan_rendering {
 
 		GLFWwindow* window;
 		VkInstance instance;
+		VkDebugUtilsMessengerEXT debug_messenger;
 
 		void init_window();
 		void init_vulkan();
 		void main_loop();
 		void cleanup();
+		void setup_debugger();
 		void inline create_instance();
 		bool inline check_validation_support();
 		std::vector<const char*> get_required_extensions();
-		
+
 		static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 			VkDebugUtilsMessageTypeFlagsEXT messageType,
 			const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,

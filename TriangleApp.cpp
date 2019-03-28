@@ -23,6 +23,7 @@ namespace vulkan_rendering {
 
 	void TriangleApp::init_vulkan() {
 		create_instance();
+		setup_debugger();
 	}
 
 	void TriangleApp::main_loop() {
@@ -33,6 +34,9 @@ namespace vulkan_rendering {
 	}
 
 	void TriangleApp::cleanup() {
+		if (enable_validation_layers) {
+			Destroy_Debug_Utils_Messenger(instance, debug_messenger, nullptr);
+		}
 		vkDestroyInstance(instance, nullptr);
 		glfwDestroyWindow(window);
 		glfwTerminate();
@@ -117,13 +121,39 @@ namespace vulkan_rendering {
 		return extensions;
 	}
 
-	VKAPI_ATTR VkBool32 VKAPI_CALL TriangleApp::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, 
+	VKAPI_ATTR VkBool32 VKAPI_CALL TriangleApp::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity, 
 		VkDebugUtilsMessageTypeFlagsEXT messageType, 
 		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, 
 		void* pUserData) {
 
-		std::cerr << "validation layers" << pCallbackData->pMessage << std::endl;
+		// We can make message severities show if they hit pass a certain threshold.
+		// In this case we want to show all messages which are warnings and errors, here are some examples below...
+		// VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT: Some event has happened that is unrelated to the specification or performance
+		// VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT: Something has happened that violates the specification or indicates a possible mistake
+		// VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT: Potential non-optimal use of Vulkan
+		if (message_severity >= VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+			std::cerr << "validation layers" << pCallbackData->pMessage << std::endl;
+		}
 
 		return VK_FALSE;
+	}
+
+	void TriangleApp::setup_debugger() {
+		if (!enable_validation_layers) {
+			return;
+		}
+
+		VkDebugUtilsMessengerCreateInfoEXT create_info = {};
+		create_info.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+		create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | 
+			VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
+		create_info.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | 
+			VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
+		create_info.pfnUserCallback = debug_callback;
+		create_info.pUserData       = nullptr; // Optional
+
+		if (Create_Debug_Utils_Messenger(instance, &create_info, nullptr, &debug_messenger)) {
+			throw new std::runtime_error("Failed to set up the debugger!");
+		}
 	}
 }
