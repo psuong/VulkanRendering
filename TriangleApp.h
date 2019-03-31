@@ -1,6 +1,8 @@
 #ifndef TRIANGLE_APP_H
 #define TRIANGLE_APP_H
 
+#include "QueueFamilyDevice.h"
+#include <functional>
 #include <GLFW/glfw3.h>
 #include <vector>
 #include <vulkan/vulkan.h>
@@ -57,10 +59,11 @@ namespace vulkan_rendering {
 		void main_loop();
 		void cleanup();
 		void setup_debugger();
-		void select_physical_device();
+		void select_physical_device(std::function<bool(VkPhysicalDevice)> validation);
 		void inline create_instance();
 		bool inline check_validation_support();
 		std::vector<const char*> get_required_extensions();
+		QueueFamilyDevice queue_families(VkPhysicalDevice device);
 
 		static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
 			VkDebugUtilsMessageTypeFlagsEXT messageType,

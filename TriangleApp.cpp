@@ -24,7 +24,12 @@ namespace vulkan_rendering {
 	void TriangleApp::init_vulkan() {
 		create_instance();
 		setup_debugger();
-		select_physical_device();
+
+		auto validation = [this](VkPhysicalDevice device) -> bool { 
+			QueueFamilyDevice indices = queue_families(device);
+			return indices.is_complete();
+		};
+		select_physical_device(validation);
 	}
 
 	void TriangleApp::main_loop() {
@@ -122,6 +127,29 @@ namespace vulkan_rendering {
 		return extensions;
 	}
 
+	QueueFamilyDevice TriangleApp::queue_families(VkPhysicalDevice device) {
+		QueueFamilyDevice indices;
+		uint32_t queue_family_count = 0;
+
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
+		std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+		vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families.data());
+
+		int i = 0;
+
+		for (const auto& queue_family : queue_families) {
+			if (queue_family.queueCount > 0 && queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+				indices.graphics_family = i;
+			}
+
+			if (indices.is_complete()) {
+				break;
+			}
+			i++;
+		}
+		return indices;
+	}
+
 	VKAPI_ATTR VkBool32 VKAPI_CALL TriangleApp::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity, 
 		VkDebugUtilsMessageTypeFlagsEXT messageType, 
 		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, 
@@ -158,7 +186,7 @@ namespace vulkan_rendering {
 		}
 	}
 
-	void TriangleApp::select_physical_device() {
+	void TriangleApp::select_physical_device(std::function<bool(VkPhysicalDevice)> validation) {
 		VkPhysicalDevice device = VK_NULL_HANDLE;
 		uint32_t device_count = 0;
 		vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
@@ -171,8 +199,14 @@ namespace vulkan_rendering {
 
 		for (const auto& d : devices) {
 			// TODO: Add a conditional check, possibly pass that as a lambda expression
-			device = d;
-			break;
+			if (validation(d)) {
+				device = d;
+				break;
+			}
+		}
+
+		if (device == VK_NULL_HANDLE) {
+			throw std::runtime_error("Failed to find a suitable GPU");
 		}
 	}
 }
