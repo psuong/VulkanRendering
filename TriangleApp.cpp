@@ -1,6 +1,6 @@
-#include "TriangleApp.h"
-
 #define GLFW_INCLUDE_VULKAN
+
+#include "TriangleApp.h"
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <vulkan/vulkan.h>
@@ -24,12 +24,13 @@ namespace vulkan_rendering {
 	void TriangleApp::init_vulkan() {
 		create_instance();
 		setup_debugger();
-
+		create_surface();
 		auto validation = [this](VkPhysicalDevice device) -> bool {
 			QueueFamilyDevice indices = queue_families(device);
 			return indices.is_complete();
 		};
 		select_physical_device(validation);
+		create_logical_device();
 	}
 
 	void TriangleApp::main_loop() {
@@ -44,6 +45,7 @@ namespace vulkan_rendering {
 			Destroy_Debug_Utils_Messenger(instance, debug_messenger, nullptr);
 		}
 		vkDestroyInstance(instance, nullptr);
+		vkDestroySurfaceKHR(instance, surface, nullptr);
 		glfwDestroyWindow(window);
 		glfwTerminate();
 		vkDestroyDevice(device, nullptr);
@@ -124,7 +126,9 @@ namespace vulkan_rendering {
 	}
 
 	inline void TriangleApp::create_surface() {
-		throw new std::runtime_error("create_surface() not implemented!");
+        if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create window surface!");
+        }
 	}
 
 	bool inline TriangleApp::check_validation_support() {
@@ -178,6 +182,9 @@ namespace vulkan_rendering {
 			if (queue_family.queueCount > 0 && queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 				indices.graphics_family = i;
 			}
+
+			VkBool32 present_support = false;
+			vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &present_support);
 
 			if (indices.is_complete()) {
 				break;

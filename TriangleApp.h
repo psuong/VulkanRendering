@@ -1,5 +1,6 @@
 #ifndef TRIANGLE_APP_H
 #define TRIANGLE_APP_H
+#define GLFW_INCLUDE_VULKAN
 
 #include "QueueFamilyDevice.h"
 #include <functional>
@@ -44,7 +45,7 @@ namespace vulkan_rendering {
 
 		VkPhysicalDevice physical_device;
 		VkDevice device;
-		VkQueue device_queue;
+		VkQueue present_queue;
 		VkSurfaceKHR surface;
 
 #if NDEBUG
