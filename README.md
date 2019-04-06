@@ -4,6 +4,8 @@ Me playing around with the Vulkan API and providing some notes on basic Vulkan A
 
 ## Table of Contents ##
 * [Validation Layer](#Validation-Layers)
+* [Window Surface](#Window-Surface)
+* [Swap Chains](#Swap-Chains)
 
 ### Validation-Layers ###
 Validation layers provide basic checking within Vulkan. Vulkan was designed to have minimal overhead so error checking is
@@ -20,3 +22,7 @@ exposes a `VkSurfaceKHR` object which is an abstract object that images are pres
 
 Window surface creation _actually_ affects which physical device is selected so it is deferred to a later step. Windows
 are also optional and Vulkan allows off screen rendering without much of the workaround found in OpenGL.
+
+### Swap Chains ###
+Before an image gets rendered, the images are stored in render buffers. Or really in Vulkan, the swap chain infrastructure.
+The images are stored in a series of queues before the image is presented to on screen.

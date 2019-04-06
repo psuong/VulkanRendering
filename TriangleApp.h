@@ -25,7 +25,7 @@ namespace vulkan_rendering {
 
 	static void Destroy_Debug_Utils_Messenger(
 		VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
-		auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+		auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
 		if (func != nullptr) {
 			func(instance, debugMessenger, pAllocator);
 		}
@@ -41,6 +41,10 @@ namespace vulkan_rendering {
 		const int HEIGHT = 600;
 		const std::vector<const char*> validation_layers = {
 			"VK_LAYER_LUNARG_standard_validation"
+		};
+
+		const std::vector<const char*> device_extensions = {
+			VK_KHR_SWAPCHAIN_EXTENSION_NAME
 		};
 
 		VkPhysicalDevice physical_device;

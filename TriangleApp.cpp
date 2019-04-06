@@ -28,7 +28,10 @@ namespace vulkan_rendering {
 		create_surface();
 		auto validation = [this](VkPhysicalDevice device) -> bool {
 			QueueFamilyDevice indices = queue_families(device);
-			return indices.is_complete();
+			// TODO: Check if the extension is supported.
+			bool is_extension_supported = true;
+
+			return indices.is_complete() && is_extension_supported;
 		};
 		select_physical_device(validation);
 		create_logical_device();
