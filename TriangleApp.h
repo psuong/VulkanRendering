@@ -42,7 +42,10 @@ namespace vulkan_rendering {
 			"VK_LAYER_LUNARG_standard_validation"
 		};
 
-		VkPhysicalDevice device;
+		VkPhysicalDevice physical_device;
+		VkDevice device;
+		VkQueue device_queue;
+		VkSurfaceKHR surface;
 
 #if NDEBUG
 		const bool enable_validation_layers = false;
@@ -61,6 +64,8 @@ namespace vulkan_rendering {
 		void setup_debugger();
 		void select_physical_device(std::function<bool(VkPhysicalDevice)> validation);
 		void inline create_instance();
+		void inline create_logical_device();
+		void inline create_surface();
 		bool inline check_validation_support();
 		std::vector<const char*> get_required_extensions();
 		QueueFamilyDevice queue_families(VkPhysicalDevice device);

@@ -1,8 +1,8 @@
 #include "TriangleApp.h"
 
 #define GLFW_INCLUDE_VULKAN
-#include <iostream>
 #include <GLFW/glfw3.h>
+#include <iostream>
 #include <vulkan/vulkan.h>
 
 namespace vulkan_rendering {
@@ -25,7 +25,7 @@ namespace vulkan_rendering {
 		create_instance();
 		setup_debugger();
 
-		auto validation = [this](VkPhysicalDevice device) -> bool { 
+		auto validation = [this](VkPhysicalDevice device) -> bool {
 			QueueFamilyDevice indices = queue_families(device);
 			return indices.is_complete();
 		};
@@ -46,6 +46,7 @@ namespace vulkan_rendering {
 		vkDestroyInstance(instance, nullptr);
 		glfwDestroyWindow(window);
 		glfwTerminate();
+		vkDestroyDevice(device, nullptr);
 	}
 
 	void inline TriangleApp::create_instance() {
@@ -53,25 +54,25 @@ namespace vulkan_rendering {
 			throw std::runtime_error("Validation layers requested but not available!");
 		}
 
-		VkApplicationInfo app_info  = {};
-		app_info.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-		app_info.pApplicationName   = "Triangle App";
+		VkApplicationInfo app_info = {};
+		app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+		app_info.pApplicationName = "Triangle App";
 		app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-		app_info.pEngineName        = "No Engine";
-		app_info.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
-		app_info.apiVersion         = VK_API_VERSION_1_0;
+		app_info.pEngineName = "No Engine";
+		app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
+		app_info.apiVersion = VK_API_VERSION_1_0;
 
 		VkInstanceCreateInfo create_info = {};
-		create_info.sType                = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-		create_info.pApplicationInfo     = &app_info;
+		create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+		create_info.pApplicationInfo = &app_info;
 
 		uint32_t glfw_extension_count = 0;
 		const char** glfw_extension;
 
-		glfw_extension                      = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
-		create_info.enabledExtensionCount   = glfw_extension_count;
+		glfw_extension = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
+		create_info.enabledExtensionCount = glfw_extension_count;
 		create_info.ppEnabledExtensionNames = glfw_extension;
-		create_info.enabledLayerCount       = 0;
+		create_info.enabledLayerCount = 0;
 
 		auto extensions = get_required_extensions();
 		create_info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
@@ -88,6 +89,42 @@ namespace vulkan_rendering {
 		if (vkCreateInstance(&create_info, nullptr, &instance) != VK_SUCCESS) {
 			throw std::runtime_error("Failed to create VkInstance!");
 		}
+	}
+
+	inline void TriangleApp::create_logical_device() {
+		QueueFamilyDevice indices = queue_families(this->physical_device);
+		VkDeviceQueueCreateInfo queue_create_info = {};
+		queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+		queue_create_info.queueFamilyIndex = indices.graphics_family.value();
+		queue_create_info.queueCount = 1;
+
+		float queue_priority = 1.0f;
+		queue_create_info.pQueuePriorities = &queue_priority;
+		VkPhysicalDeviceFeatures device_features = {};
+		VkDeviceCreateInfo create_info = {};
+		create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+		create_info.pQueueCreateInfos = &queue_create_info;
+		create_info.queueCreateInfoCount = 1;
+		create_info.pEnabledFeatures = &device_features;
+		create_info.enabledExtensionCount = 0;
+
+		if (enable_validation_layers) {
+			create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+			create_info.ppEnabledLayerNames = validation_layers.data();
+		}
+		else {
+			create_info.enabledLayerCount = 0;
+		}
+
+		if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS) {
+			throw new std::runtime_error("Cannot create device!");
+		}
+
+		vkGetDeviceQueue(device, indices.graphics_family.value(), 0, &device_queue);
+	}
+
+	inline void TriangleApp::create_surface() {
+		throw new std::runtime_error("create_surface() not implemented!");
 	}
 
 	bool inline TriangleApp::check_validation_support() {
@@ -150,9 +187,9 @@ namespace vulkan_rendering {
 		return indices;
 	}
 
-	VKAPI_ATTR VkBool32 VKAPI_CALL TriangleApp::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity, 
-		VkDebugUtilsMessageTypeFlagsEXT messageType, 
-		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, 
+	VKAPI_ATTR VkBool32 VKAPI_CALL TriangleApp::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
+		VkDebugUtilsMessageTypeFlagsEXT messageType,
+		const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
 		void* pUserData) {
 
 		// We can make message severities show if they hit pass a certain threshold.
@@ -173,13 +210,13 @@ namespace vulkan_rendering {
 		}
 
 		VkDebugUtilsMessengerCreateInfoEXT create_info = {};
-		create_info.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-		create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | 
+		create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+		create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
 			VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-		create_info.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | 
+		create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
 			VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
 		create_info.pfnUserCallback = debug_callback;
-		create_info.pUserData       = nullptr; // Optional
+		create_info.pUserData = nullptr; // Optional
 
 		if (Create_Debug_Utils_Messenger(instance, &create_info, nullptr, &debug_messenger)) {
 			throw new std::runtime_error("Failed to set up the debugger!");
