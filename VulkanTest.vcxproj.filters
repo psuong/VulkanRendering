@@ -26,5 +26,11 @@
     <ClInclude Include="TriangleApp.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="QueueFamilyDevice.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include=".editorconfig" />
   </ItemGroup>
 </Project>

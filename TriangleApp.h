@@ -10,77 +10,78 @@
 
 namespace vulkan_rendering {
 
-	// Extensions function to create the debuging messenger
-	static VkResult Create_Debug_Utils_Messenger(
-		VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
-		const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
-		auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
-		if (func != nullptr) {
-			return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
-		}
-		else {
-			return VK_ERROR_EXTENSION_NOT_PRESENT;
-		}
-	}
+    // Extensions function to create the debuging messenger
+    static VkResult Create_Debug_Utils_Messenger(
+        VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* pCreateInfo,
+        const VkAllocationCallbacks* pAllocator, VkDebugUtilsMessengerEXT* pDebugMessenger) {
+        auto func = (PFN_vkCreateDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkCreateDebugUtilsMessengerEXT");
+        if (func != nullptr) {
+            return func(instance, pCreateInfo, pAllocator, pDebugMessenger);
+        }
+        else {
+            return VK_ERROR_EXTENSION_NOT_PRESENT;
+        }
+    }
 
-	static void Destroy_Debug_Utils_Messenger(
-		VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
-		auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
-		if (func != nullptr) {
-			func(instance, debugMessenger, pAllocator);
-		}
-	}
+    static void Destroy_Debug_Utils_Messenger(
+        VkInstance instance, VkDebugUtilsMessengerEXT debugMessenger, const VkAllocationCallbacks* pAllocator) {
+        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT)vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+        if (func != nullptr) {
+            func(instance, debugMessenger, pAllocator);
+        }
+    }
 
-	class TriangleApp {
+    class TriangleApp {
 
-	public:
-		void run();
+    public:
+        void run();
 
-	private:
-		const int WIDTH = 800;
-		const int HEIGHT = 600;
-		const std::vector<const char*> validation_layers = {
-			"VK_LAYER_LUNARG_standard_validation"
-		};
+    private:
+        const int WIDTH = 800;
+        const int HEIGHT = 600;
+        const std::vector<const char*> validation_layers = {
+            "VK_LAYER_LUNARG_standard_validation"
+        };
 
-		const std::vector<const char*> device_extensions = {
-			VK_KHR_SWAPCHAIN_EXTENSION_NAME
-		};
+        const std::vector<const char*> device_extensions = {
+            VK_KHR_SWAPCHAIN_EXTENSION_NAME
+        };
 
-		VkPhysicalDevice physical_device;
-		VkDevice device;
-		VkQueue graphics_queue;
-		VkQueue present_queue;
-		VkSurfaceKHR surface;
+        VkPhysicalDevice physical_device;
+        VkDevice device;
+        VkQueue graphics_queue;
+        VkQueue present_queue;
+        VkSurfaceKHR surface;
 
 #if NDEBUG
-		const bool enable_validation_layers = false;
+        const bool enable_validation_layers = false;
 #else
-		const bool enable_validation_layers = true;
+        const bool enable_validation_layers = true;
 #endif
 
-		GLFWwindow* window;
-		VkInstance instance;
-		VkDebugUtilsMessengerEXT debug_messenger;
+        GLFWwindow* window;
+        VkInstance instance;
+        VkDebugUtilsMessengerEXT debug_messenger;
 
-		void init_window();
-		void init_vulkan();
-		void main_loop();
-		void cleanup();
-		void setup_debugger();
-		void select_physical_device(std::function<bool(VkPhysicalDevice)> validation);
-		void inline create_instance();
-		void inline create_logical_device();
-		void inline create_surface();
-		bool inline check_validation_support();
-		std::vector<const char*> get_required_extensions();
-		QueueFamilyDevice queue_families(VkPhysicalDevice device);
+        void init_window();
+        void init_vulkan();
+        void main_loop();
+        void cleanup();
+        void setup_debugger();
+        void select_physical_device(std::function<bool(VkPhysicalDevice)> validation);
+        void inline create_instance();
+        void inline create_logical_device();
+        void inline create_surface();
+        bool inline check_validation_support();
+        bool inline check_device_extension_support(VkPhysicalDevice device);
+        std::vector<const char*> get_required_extensions();
+        QueueFamilyDevice queue_families(VkPhysicalDevice device);
 
-		static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-			VkDebugUtilsMessageTypeFlagsEXT messageType,
-			const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
-			void* pUserData);
-	};
+        static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
+            VkDebugUtilsMessageTypeFlagsEXT messageType,
+            const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
+            void* pUserData);
+    };
 }
 
 #endif
