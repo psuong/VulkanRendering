@@ -1,4 +1,4 @@
-#define GLFW_INCLUDE_VULKAN
+﻿#define GLFW_INCLUDE_VULKAN
 
 #include "TriangleApp.h"
 #include <GLFW/glfw3.h>
@@ -28,9 +28,7 @@ namespace vulkan_rendering {
         create_surface();
         auto validation = [this](VkPhysicalDevice device) -> bool {
             QueueFamilyDevice indices = queue_families(device);
-            // TODO: Check if the extension is supported.
             bool is_extension_supported = check_device_extension_support(device);
-
             return indices.is_complete() && is_extension_supported;
         };
         select_physical_device(validation);
@@ -100,41 +98,39 @@ namespace vulkan_rendering {
     inline void TriangleApp::create_logical_device() {
         QueueFamilyDevice indices = queue_families(physical_device);
 
-        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
-        std::set<uint32_t> uniqueQueueFamilies = { indices.graphics_family.value(), indices.present_family.value() };
+        std::vector<VkDeviceQueueCreateInfo> queue_create_info;
+        std::set<uint32_t> unique_queue_families = { indices.graphics_family.value(), indices.present_family.value() };
 
         float queuePriority = 1.0f;
-        for (uint32_t queueFamily : uniqueQueueFamilies) {
+        for (uint32_t queue_family : unique_queue_families) {
             VkDeviceQueueCreateInfo queueCreateInfo = {};
             queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = queueFamily;
+            queueCreateInfo.queueFamilyIndex = queue_family;
             queueCreateInfo.queueCount = 1;
             queueCreateInfo.pQueuePriorities = &queuePriority;
-            queueCreateInfos.push_back(queueCreateInfo);
+            queue_create_info.push_back(queueCreateInfo);
         }
 
-        VkPhysicalDeviceFeatures deviceFeatures = {};
+        VkPhysicalDeviceFeatures device_features = {};
 
-        VkDeviceCreateInfo createInfo = {};
-        createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-
-        createInfo.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size());
-        createInfo.pQueueCreateInfos = queueCreateInfos.data();
-
-        createInfo.pEnabledFeatures = &deviceFeatures;
-
-        createInfo.enabledExtensionCount = 0;
+        VkDeviceCreateInfo create_info = {};
+        create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_info.size());
+        create_info.pQueueCreateInfos = queue_create_info.data();
+        create_info.pEnabledFeatures = &device_features;
+        create_info.enabledExtensionCount = static_cast<uint32_t>(device_extensions.size());
+        create_info.ppEnabledExtensionNames = device_extensions.data();
 
         if (enable_validation_layers) {
-            createInfo.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
-            createInfo.ppEnabledLayerNames = validation_layers.data();
+            create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+            create_info.ppEnabledLayerNames = validation_layers.data();
         }
         else {
-            createInfo.enabledLayerCount = 0;
+            create_info.enabledLayerCount = 0;
         }
 
-        if (vkCreateDevice(physical_device, &createInfo, nullptr, &device) != VK_SUCCESS) {
-            throw std::runtime_error("failed to create logical device!");
+        if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create logical device!");
         }
 
         vkGetDeviceQueue(device, indices.graphics_family.value(), 0, &graphics_queue);
@@ -173,18 +169,18 @@ namespace vulkan_rendering {
     }
 
     inline bool TriangleApp::check_device_extension_support(VkPhysicalDevice device) {
-        uint32_t extensions;
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensions, nullptr);
+        uint32_t extension_size;
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_size, nullptr);
 
-        std::vector<VkExtensionProperties> available_extensions(extensions);
-        vkEnumerateDeviceExtensionProperties(device, nullptr, &extensions, available_extensions.data());
+        std::vector<VkExtensionProperties> available_extensions(extension_size);
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_size, available_extensions.data());
 
         std::set<std::string> required(device_extensions.begin(), device_extensions.end());
 
-        for (const auto& ext : available_extensions) {
-            required.erase(ext.extensionName);
+        for (const auto& extension : available_extensions) {
+            required.erase(extension.extensionName);
         }
-        std::cout << required.empty() << std::endl;
+
         return required.empty();
     }
 
@@ -218,9 +214,14 @@ namespace vulkan_rendering {
             VkBool32 present_support = false;
             vkGetPhysicalDeviceSurfaceSupportKHR(device, i, surface, &present_support);
 
+            if (queue_family.queueCount > 0 && present_support) {
+                indices.present_family = i;
+            }
+
             if (indices.is_complete()) {
                 break;
             }
+
             i++;
         }
         return indices;

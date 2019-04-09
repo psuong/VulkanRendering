@@ -6,6 +6,7 @@
 namespace vulkan_rendering {
 
     struct QueueFamilyDevice {
+    public:
         std::optional<uint32_t> graphics_family;
         std::optional<uint32_t> present_family;
 

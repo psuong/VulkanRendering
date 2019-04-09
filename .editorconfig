@@ -1,8 +1,8 @@
-# Editor Config #
+﻿# Editor Config #
 root = true
 
 [*]
-end_of_line = lf 
+end_of_line = lf
 max_line_length = 120
 insert_final_newline = true
 
