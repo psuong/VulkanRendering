@@ -29,7 +29,14 @@ namespace vulkan_rendering {
         auto validation = [this](VkPhysicalDevice device) -> bool {
             QueueFamilyDevice indices = queue_families(device);
             bool is_extension_supported = check_device_extension_support(device);
-            return indices.is_complete() && is_extension_supported;
+
+            bool is_swap_chain_valid = false;
+            if (is_extension_supported) {
+                auto swap_chain_support = query_swap_chain_support(device);
+                is_swap_chain_valid = !swap_chain_support.formats.empty() && !swap_chain_support.present_modes.empty();
+            }
+
+            return indices.is_complete() && is_extension_supported && is_swap_chain_valid;
         };
         select_physical_device(validation);
         create_logical_device();
@@ -227,6 +234,27 @@ namespace vulkan_rendering {
         return indices;
     }
 
+    SwapChainSupportDetails TriangleApp::query_swap_chain_support(VkPhysicalDevice device) {
+        SwapChainSupportDetails details;
+
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+
+        uint32_t format_count;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, nullptr);
+        if (format_count != 0) {
+            details.formats.resize(format_count);
+            vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, details.formats.data());
+        }
+
+        uint32_t present_mode_count;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_count, nullptr);
+        if (present_mode_count != 0) {
+            details.present_modes.resize(present_mode_count);
+            vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_count, details.present_modes.data());
+        }
+        return details;
+    }
+
     VKAPI_ATTR VkBool32 VKAPI_CALL TriangleApp::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
         VkDebugUtilsMessageTypeFlagsEXT messageType,
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
@@ -264,7 +292,6 @@ namespace vulkan_rendering {
     }
 
     void TriangleApp::select_physical_device(std::function<bool(VkPhysicalDevice)> validation) {
-        VkPhysicalDevice device = VK_NULL_HANDLE;
         uint32_t device_count = 0;
         vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
         if (device_count == 0) {
@@ -277,7 +304,7 @@ namespace vulkan_rendering {
         for (const auto& d : devices) {
             // TODO: Add a conditional check, possibly pass that as a lambda expression
             if (validation(d)) {
-                device = d;
+                physical_device = d;
                 break;
             }
         }

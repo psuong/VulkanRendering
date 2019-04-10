@@ -3,6 +3,7 @@
 #define GLFW_INCLUDE_VULKAN
 
 #include "QueueFamilyDevice.h"
+#include "SwapChainSupportDetails.h"
 #include <functional>
 #include <GLFW/glfw3.h>
 #include <vector>
@@ -76,6 +77,7 @@ namespace vulkan_rendering {
         bool inline check_device_extension_support(VkPhysicalDevice device);
         std::vector<const char*> get_required_extensions();
         QueueFamilyDevice queue_families(VkPhysicalDevice device);
+        SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice device);
 
         static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
             VkDebugUtilsMessageTypeFlagsEXT messageType,

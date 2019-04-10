@@ -164,6 +164,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="QueueFamilyDevice.h" />
+    <ClInclude Include="SwapChainSupportDetails.h" />
     <ClInclude Include="TriangleApp.h" />
   </ItemGroup>
   <ItemGroup>
