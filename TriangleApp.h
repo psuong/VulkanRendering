@@ -80,6 +80,7 @@ namespace vulkan_rendering {
         SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice device);
         VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
         VkPresentModeKHR select_presentation_mode(const std::vector<VkPresentModeKHR>& available_presentations);
+        // TODO: Implement swap extent
 
         static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
             VkDebugUtilsMessageTypeFlagsEXT messageType,

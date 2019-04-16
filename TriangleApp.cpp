@@ -274,7 +274,18 @@ namespace vulkan_rendering {
     }
 
     VkPresentModeKHR TriangleApp::select_presentation_mode(const std::vector<VkPresentModeKHR>& available_presentations) {
-        throw new std::runtime_error("select_presentation_mode not implemented!");
+        auto best_option = VK_PRESENT_MODE_FIFO_KHR;
+        for (const auto& presentation : available_presentations) {
+            // We want to support triple buffering first but if it's not available we choose the next best.
+            if (presentation == VK_PRESENT_MODE_MAILBOX_KHR) {
+                return presentation;
+            }
+            else if (presentation == VK_PRESENT_MODE_IMMEDIATE_KHR) {
+                best_option = presentation;
+            }
+        }
+
+        return best_option;
     }
 
     VKAPI_ATTR VkBool32 VKAPI_CALL TriangleApp::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
