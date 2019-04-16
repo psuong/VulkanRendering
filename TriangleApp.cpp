@@ -273,6 +273,10 @@ namespace vulkan_rendering {
         return available_formats[0];
     }
 
+    VkPresentModeKHR TriangleApp::select_presentation_mode(const std::vector<VkPresentModeKHR>& available_presentations) {
+        throw new std::runtime_error("select_presentation_mode not implemented!");
+    }
+
     VKAPI_ATTR VkBool32 VKAPI_CALL TriangleApp::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
         VkDebugUtilsMessageTypeFlagsEXT messageType,
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
