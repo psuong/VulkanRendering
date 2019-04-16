@@ -78,6 +78,7 @@ namespace vulkan_rendering {
         std::vector<const char*> get_required_extensions();
         QueueFamilyDevice queue_families(VkPhysicalDevice device);
         SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice device);
+        VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
 
         static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
             VkDebugUtilsMessageTypeFlagsEXT messageType,

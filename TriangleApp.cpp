@@ -255,6 +255,24 @@ namespace vulkan_rendering {
         return details;
     }
 
+    VkSurfaceFormatKHR TriangleApp::select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats) {
+        if (available_formats.size() == 1 && available_formats[0].format == VK_FORMAT_UNDEFINED) {
+            // NOTE: We want to work in SRGB colour space but we use the standard RGB colours to work in since it's a tad easier.
+            return {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+        }
+
+        for (const auto& available_format : available_formats) {
+            if (available_format.format == VK_FORMAT_B8G8R8A8_UNORM && 
+                available_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+                return available_format;
+            }
+        }
+        
+        // Default return value for the swap surface support, you can usually just pick your own.
+        // https://stackoverflow.com/questions/12524623/what-are-the-practical-differences-when-working-with-colors-in-a-linear-vs-a-no
+        return available_formats[0];
+    }
+
     VKAPI_ATTR VkBool32 VKAPI_CALL TriangleApp::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
         VkDebugUtilsMessageTypeFlagsEXT messageType,
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
