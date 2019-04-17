@@ -7,6 +7,7 @@ Me playing around with the Vulkan API and providing some notes on basic Vulkan A
 * [Window Surface](#Window-Surface)
 * [Swap Chains](#Swap-Chains)
   * [Presentation Mode](#Presentation-Mode)
+  * [Swap Extents](#Swap-Extents)
 
 ### Validation-Layers ###
 Validation layers provide basic checking within Vulkan. Vulkan was designed to have minimal overhead so error checking is
@@ -45,3 +46,7 @@ and images are submitted to the back of the queue. The application is forced to 
 is stalled, then the image is rendered right away.
 * `VK_PRESENT_MODE_MAILBOX_KHR`: Allows overwrite of the images that are currently within the queue. If the queue is full,
 the previous images are replaced with the newly submitted ones. Can be used to for double buffering or triple buffering.
+
+### Swap Extents ###
+The swap extent is the resolution of the images and is usually equal to the resolution of the window that you're drawing. The
+`VkSurfaceCapabilitiesKHR` is a struct which holds the range of possible resolutions.

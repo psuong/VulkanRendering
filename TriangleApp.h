@@ -81,6 +81,7 @@ namespace vulkan_rendering {
         VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
         VkPresentModeKHR select_presentation_mode(const std::vector<VkPresentModeKHR>& available_presentations);
         // TODO: Implement swap extent
+        VkExtent2D select_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities);
 
         static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
             VkDebugUtilsMessageTypeFlagsEXT messageType,

@@ -1,6 +1,7 @@
 ﻿#define GLFW_INCLUDE_VULKAN
 
 #include "TriangleApp.h"
+#include <algorithm>
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <set>
@@ -36,7 +37,7 @@ namespace vulkan_rendering {
                 is_swap_chain_valid = !swap_chain_support.formats.empty() && !swap_chain_support.present_modes.empty();
             }
 
-            return indices.is_complete() && is_extension_supported && is_swap_chain_valid;
+            return indices.is_complete() && is_extension_supported&& is_swap_chain_valid;
         };
         select_physical_device(validation);
         create_logical_device();
@@ -258,16 +259,16 @@ namespace vulkan_rendering {
     VkSurfaceFormatKHR TriangleApp::select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats) {
         if (available_formats.size() == 1 && available_formats[0].format == VK_FORMAT_UNDEFINED) {
             // NOTE: We want to work in SRGB colour space but we use the standard RGB colours to work in since it's a tad easier.
-            return {VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR};
+            return { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
         }
 
         for (const auto& available_format : available_formats) {
-            if (available_format.format == VK_FORMAT_B8G8R8A8_UNORM && 
+            if (available_format.format == VK_FORMAT_B8G8R8A8_UNORM &&
                 available_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
                 return available_format;
             }
         }
-        
+
         // Default return value for the swap surface support, you can usually just pick your own.
         // https://stackoverflow.com/questions/12524623/what-are-the-practical-differences-when-working-with-colors-in-a-linear-vs-a-no
         return available_formats[0];
@@ -286,6 +287,20 @@ namespace vulkan_rendering {
         }
 
         return best_option;
+    }
+
+    VkExtent2D TriangleApp::select_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities) {
+        if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
+            return capabilities.currentExtent;
+        }
+        else {
+            VkExtent2D actual = { WIDTH, HEIGHT };
+
+            actual.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, actual.width));
+            actual.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, actual.height));
+
+            return actual;
+        }
     }
 
     VKAPI_ATTR VkBool32 VKAPI_CALL TriangleApp::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
