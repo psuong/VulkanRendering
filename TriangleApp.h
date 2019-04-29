@@ -53,6 +53,7 @@ namespace vulkan_rendering {
         VkQueue graphics_queue;
         VkQueue present_queue;
         VkSurfaceKHR surface;
+        VkSwapchainKHR swap_chain;
 
 #if NDEBUG
         const bool enable_validation_layers = false;
@@ -70,6 +71,7 @@ namespace vulkan_rendering {
         void cleanup();
         void setup_debugger();
         void select_physical_device(std::function<bool(VkPhysicalDevice)> validation);
+        void create_swap_chain();
         void inline create_instance();
         void inline create_logical_device();
         void inline create_surface();
@@ -80,7 +82,6 @@ namespace vulkan_rendering {
         SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice device);
         VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
         VkPresentModeKHR select_presentation_mode(const std::vector<VkPresentModeKHR>& available_presentations);
-        // TODO: Implement swap extent
         VkExtent2D select_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities);
 
         static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,

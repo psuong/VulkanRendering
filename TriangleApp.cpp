@@ -29,15 +29,16 @@ namespace vulkan_rendering {
         create_surface();
         auto validation = [this](VkPhysicalDevice device) -> bool {
             QueueFamilyDevice indices = queue_families(device);
-            bool is_extension_supported = check_device_extension_support(device);
 
-            bool is_swap_chain_valid = false;
-            if (is_extension_supported) {
-                auto swap_chain_support = query_swap_chain_support(device);
-                is_swap_chain_valid = !swap_chain_support.formats.empty() && !swap_chain_support.present_modes.empty();
+            bool extensionsSupported = check_device_extension_support(device);
+
+            bool swapChainAdequate = false;
+            if (extensionsSupported) {
+                SwapChainSupportDetails swapChainSupport = query_swap_chain_support(device);
+                swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.present_modes.empty();
             }
 
-            return indices.is_complete() && is_extension_supported&& is_swap_chain_valid;
+            return indices.is_complete() && extensionsSupported && swapChainAdequate;
         };
         select_physical_device(validation);
         create_logical_device();
@@ -51,9 +52,13 @@ namespace vulkan_rendering {
     }
 
     void TriangleApp::cleanup() {
+        vkDestroySwapchainKHR(device, swap_chain, nullptr);
+        vkDestroyDevice(device, nullptr);
+
         if (enable_validation_layers) {
             Destroy_Debug_Utils_Messenger(instance, debug_messenger, nullptr);
         }
+
         vkDestroyInstance(instance, nullptr);
         vkDestroySurfaceKHR(instance, surface, nullptr);
         glfwDestroyWindow(window);
@@ -351,14 +356,64 @@ namespace vulkan_rendering {
 
         for (const auto& d : devices) {
             // TODO: Add a conditional check, possibly pass that as a lambda expression
-            if (validation(d)) {
+            bool is_valid = validation(d);
+            printf(is_valid ? "true" : "false");
+            if (is_valid) {
                 physical_device = d;
                 break;
             }
         }
 
-        if (device == VK_NULL_HANDLE) {
+        if (physical_device == VK_NULL_HANDLE) {
             throw std::runtime_error("Failed to find a suitable GPU");
+        }
+    }
+
+    void TriangleApp::create_swap_chain() {
+        auto swap_chain_support = query_swap_chain_support(physical_device);
+
+        VkSurfaceFormatKHR surface_format = select_swap_surface_format(swap_chain_support.formats);
+        VkPresentModeKHR present_mode     = select_presentation_mode(swap_chain_support.present_modes);
+        VkExtent2D extent                 = select_swap_extent(swap_chain_support.capabilities);
+
+        // How many images do we want to support in the swap chain?
+        uint32_t image_count = swap_chain_support.capabilities.minImageCount + 1;
+
+        if (swap_chain_support.capabilities.minImageCount > 0 && image_count > swap_chain_support.capabilities.maxImageCount) {
+            image_count = swap_chain_support.capabilities.maxImageCount;
+        }
+
+        VkSwapchainCreateInfoKHR create_info = {};
+        create_info.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        create_info.surface          = surface;
+        create_info.minImageCount    = image_count;
+        create_info.imageFormat      = surface_format.format;
+        create_info.imageColorSpace  = surface_format.colorSpace;
+        create_info.imageExtent      = extent;
+        create_info.imageArrayLayers = 1;                                           // specifies the # of layers each image consists of, normally it's usually just 1.
+        create_info.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+
+        QueueFamilyDevice indices = queue_families(physical_device);
+        uint32_t queue_family_indices[] = { indices.graphics_family.value(), indices.present_family.value() };
+
+        if (indices.graphics_family != indices.present_family) {
+            create_info.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
+            create_info.queueFamilyIndexCount = 2;
+            create_info.pQueueFamilyIndices   = queue_family_indices;
+        } else {
+            create_info.imageSharingMode      = VK_SHARING_MODE_EXCLUSIVE;
+            create_info.queueFamilyIndexCount = 0; // Optional
+            create_info.pQueueFamilyIndices   = nullptr; // Optional
+        }
+
+        create_info.preTransform   = swap_chain_support.capabilities.currentTransform;
+        create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        create_info.presentMode    = present_mode;
+        create_info.clipped        = VK_TRUE;
+        create_info.oldSwapchain   = VK_NULL_HANDLE;
+
+        if (vkCreateSwapchainKHR(device, &create_info, nullptr, &swap_chain) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create swap chain!");
         }
     }
 }
