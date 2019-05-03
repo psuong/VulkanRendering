@@ -54,6 +54,11 @@ namespace vulkan_rendering {
         VkQueue present_queue;
         VkSurfaceKHR surface;
         VkSwapchainKHR swap_chain;
+        std::vector<VkImage> swap_chain_images;
+        VkFormat swap_chain_image_format;
+        VkExtent2D swap_chain_extent;
+
+        std::vector<VkImageView> swap_chain_image_views;
 
 #if NDEBUG
         const bool enable_validation_layers = false;
@@ -65,6 +70,7 @@ namespace vulkan_rendering {
         VkInstance instance;
         VkDebugUtilsMessengerEXT debug_messenger;
 
+        // Functions
         void init_window();
         void init_vulkan();
         void main_loop();
@@ -83,6 +89,9 @@ namespace vulkan_rendering {
         VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
         VkPresentModeKHR select_presentation_mode(const std::vector<VkPresentModeKHR>& available_presentations);
         VkExtent2D select_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities);
+
+        // Image functions
+        void create_image_views();
 
         static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
             VkDebugUtilsMessageTypeFlagsEXT messageType,

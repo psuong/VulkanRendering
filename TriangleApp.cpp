@@ -38,7 +38,7 @@ namespace vulkan_rendering {
                 swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.present_modes.empty();
             }
 
-            return indices.is_complete() && extensionsSupported && swapChainAdequate;
+            return indices.is_complete() && extensionsSupported&& swapChainAdequate;
         };
         select_physical_device(validation);
         create_logical_device();
@@ -52,6 +52,9 @@ namespace vulkan_rendering {
     }
 
     void TriangleApp::cleanup() {
+        for (auto image : swap_chain_image_views) {
+            vkDestroyImageView(device, image, nullptr);
+        }
         vkDestroySwapchainKHR(device, swap_chain, nullptr);
         vkDestroyDevice(device, nullptr);
 
@@ -357,7 +360,6 @@ namespace vulkan_rendering {
         for (const auto& d : devices) {
             // TODO: Add a conditional check, possibly pass that as a lambda expression
             bool is_valid = validation(d);
-            printf(is_valid ? "true" : "false");
             if (is_valid) {
                 physical_device = d;
                 break;
@@ -373,8 +375,8 @@ namespace vulkan_rendering {
         auto swap_chain_support = query_swap_chain_support(physical_device);
 
         VkSurfaceFormatKHR surface_format = select_swap_surface_format(swap_chain_support.formats);
-        VkPresentModeKHR present_mode     = select_presentation_mode(swap_chain_support.present_modes);
-        VkExtent2D extent                 = select_swap_extent(swap_chain_support.capabilities);
+        VkPresentModeKHR present_mode = select_presentation_mode(swap_chain_support.present_modes);
+        VkExtent2D extent = select_swap_extent(swap_chain_support.capabilities);
 
         // How many images do we want to support in the swap chain?
         uint32_t image_count = swap_chain_support.capabilities.minImageCount + 1;
@@ -384,36 +386,80 @@ namespace vulkan_rendering {
         }
 
         VkSwapchainCreateInfoKHR create_info = {};
-        create_info.sType            = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-        create_info.surface          = surface;
-        create_info.minImageCount    = image_count;
-        create_info.imageFormat      = surface_format.format;
-        create_info.imageColorSpace  = surface_format.colorSpace;
-        create_info.imageExtent      = extent;
+        create_info.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        create_info.surface = surface;
+        create_info.minImageCount = image_count;
+        create_info.imageFormat = surface_format.format;
+        create_info.imageColorSpace = surface_format.colorSpace;
+        create_info.imageExtent = extent;
         create_info.imageArrayLayers = 1;                                           // specifies the # of layers each image consists of, normally it's usually just 1.
-        create_info.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
+        create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
         QueueFamilyDevice indices = queue_families(physical_device);
         uint32_t queue_family_indices[] = { indices.graphics_family.value(), indices.present_family.value() };
 
         if (indices.graphics_family != indices.present_family) {
-            create_info.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
+            create_info.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
             create_info.queueFamilyIndexCount = 2;
-            create_info.pQueueFamilyIndices   = queue_family_indices;
-        } else {
-            create_info.imageSharingMode      = VK_SHARING_MODE_EXCLUSIVE;
+            create_info.pQueueFamilyIndices = queue_family_indices;
+        }
+        else {
+            create_info.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
             create_info.queueFamilyIndexCount = 0; // Optional
-            create_info.pQueueFamilyIndices   = nullptr; // Optional
+            create_info.pQueueFamilyIndices = nullptr; // Optional
         }
 
-        create_info.preTransform   = swap_chain_support.capabilities.currentTransform;
+        create_info.preTransform = swap_chain_support.capabilities.currentTransform;
         create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-        create_info.presentMode    = present_mode;
-        create_info.clipped        = VK_TRUE;
-        create_info.oldSwapchain   = VK_NULL_HANDLE;
+        create_info.presentMode = present_mode;
+        create_info.clipped = VK_TRUE;
+        create_info.oldSwapchain = VK_NULL_HANDLE;
 
         if (vkCreateSwapchainKHR(device, &create_info, nullptr, &swap_chain) != VK_SUCCESS) {
             throw std::runtime_error("failed to create swap chain!");
+        }
+
+        // NOTE: Why we do we do this?
+        // Because we only specified a minimum number of images in the swap chain, so we want to query all potential images
+        // first. Then we want to resize the containers and get all the image handles again.
+        vkGetSwapchainImagesKHR(device, swap_chain, &image_count, nullptr);
+        swap_chain_images.resize(image_count);
+        vkGetSwapchainImagesKHR(device, swap_chain, &image_count, swap_chain_images.data());
+
+        swap_chain_image_format = surface_format.format;
+        swap_chain_extent       = extent;
+    }
+
+    void TriangleApp::create_image_views() {
+        // Resize the buffer to fit all images we want to create.
+        swap_chain_image_views.resize(swap_chain_images.size());
+
+        for (auto i = 0; i < swap_chain_images.size(); i++) {
+            VkImageViewCreateInfo create_info = {};
+            create_info.sType                 = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+            create_info.format                = swap_chain_image_format;
+            create_info.image = swap_chain_images[i];
+            
+            // We can define how the image data can be interpretted, e.g. as a regular 2D image or even a cube map.
+            create_info.viewType = VK_IMAGE_VIEW_TYPE_2D;
+            create_info.format = swap_chain_image_format;
+
+            create_info.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+            create_info.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+            create_info.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+            create_info.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+
+            // What is our image's purpose is described via the subresourceRange.
+            // In this case, we want colour targets without any mipmapping.
+            create_info.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
+            create_info.subresourceRange.baseMipLevel   = 0;
+            create_info.subresourceRange.levelCount     = 1;
+            create_info.subresourceRange.baseArrayLayer = 0;
+            create_info.subresourceRange.layerCount     = 1;
+
+            if (vkCreateImageView(device, &create_info, nullptr, &swap_chain_image_views[i]) != VK_SUCCESS) {
+                throw std::runtime_error("Failed to create image view!");
+            }
         }
     }
 }
