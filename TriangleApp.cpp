@@ -59,11 +59,11 @@ namespace vulkan_rendering {
             Destroy_Debug_Utils_Messenger(instance, debug_messenger, nullptr);
         }
 
-        vkDestroyInstance(instance, nullptr);
         vkDestroySurfaceKHR(instance, surface, nullptr);
+        vkDestroyInstance(instance, nullptr);
+
         glfwDestroyWindow(window);
         glfwTerminate();
-        vkDestroyDevice(device, nullptr);
     }
 
     void inline TriangleApp::create_instance() {
