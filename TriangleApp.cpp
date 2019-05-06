@@ -468,6 +468,45 @@ namespace vulkan_rendering {
         auto vertex_shader   = Read_File("shaders/vert.spv");
         auto fragment_shader = Read_File("shaders/frag.spv");
 
+        auto vertex_shader_module   = create_shader_module(vertex_shader);
+        auto fragment_shader_module = create_shader_module(fragment_shader);
+
         throw new std::runtime_error("create_graphics_pipeline not implemented!");
+
+        // TODO: Integrate the shaders into the pipeline.
+
+        VkPipelineShaderStageCreateInfo vertex_pipeline_info = {};
+        vertex_pipeline_info.sType                           = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        vertex_pipeline_info.stage                           = VK_SHADER_STAGE_VERTEX_BIT;
+        vertex_pipeline_info.module                          = vertex_shader_module;
+        vertex_pipeline_info.pName                           = "main";
+
+        VkPipelineShaderStageCreateInfo fragment_pipeline_info = {};
+        fragment_pipeline_info.sType                           = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+        fragment_pipeline_info.stage                           = VK_SHADER_STAGE_FRAGMENT_BIT;
+        fragment_pipeline_info.module                          = fragment_shader_module;
+        fragment_pipeline_info.pName                           = "main";
+
+        auto shader_stages = { vertex_pipeline_info, fragment_pipeline_info };
+
+        vkDestroyShaderModule(device, vertex_shader_module, nullptr);
+        vkDestroyShaderModule(device, vertex_shader_module, nullptr);
+    }
+
+    VkShaderModule TriangleApp::create_shader_module(const std::vector<char>& code) {
+        VkShaderModuleCreateInfo create_info = {};
+        create_info.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+        create_info.codeSize = code.size();
+
+        // NOTE: Reinterpret the pointer.
+        create_info.pCode = reinterpret_cast<const uint32_t*>(code.data());
+
+
+        VkShaderModule shader_module;
+        if (vkCreateShaderModule(device, &create_info, nullptr, &shader_module) != VK_SUCCESS) {
+            throw new std::runtime_error("Failed to create the shader module!");
+        }
+
+        return shader_module;
     }
 }
