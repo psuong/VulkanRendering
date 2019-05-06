@@ -462,4 +462,8 @@ namespace vulkan_rendering {
             }
         }
     }
+
+    void TriangleApp::create_graphics_pipeline() {
+
+    }
 }

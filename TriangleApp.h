@@ -92,6 +92,7 @@ namespace vulkan_rendering {
 
         // Image functions
         void create_image_views();
+        void create_graphics_pipeline();
 
         static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
             VkDebugUtilsMessageTypeFlagsEXT messageType,

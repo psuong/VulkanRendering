@@ -10,6 +10,7 @@ Me playing around with the Vulkan API and providing some notes on basic Vulkan A
   * [Swap Extents](#Swap-Extents)
   * [Swap Chain Images](#Swap-Chain-Images)
 * [Graphics Pipeline Basics](#Graphics-Pipeline-Basics)
+  * [Shader Language](#Shader Language)
 
 ### Validation-Layers ###
 Validation layers provide basic checking within Vulkan. Vulkan was designed to have minimal overhead so error checking is
@@ -62,8 +63,28 @@ is needed to transfer the image from one queue to another.
 ### Graphics Pipeline Basics ###
 * Input Assembler - collects raw vertex data from the specified buffers and may use an index buffer to reduce copied vertices
 * Vertex Shader - runs for every vertex and generally applies xfroms to turn vertex positions from model space to screen space.
-* Tessellation Shader - allows you to divide geometry based on certain rules to increase mesh quality (e.g. brick walls and staircases look less flat when nearby)
-* Geometry shader - runs on every primitive and can discard it or output more primitives. Similar to tesselation shader, but geom shader performance is worse than tesselation shaders (unless on Intel Integrated Graphics? - I'll need to check this)
-* Raserization - represents primitves into fragments. These are pixel elements that they fill on the frame buffer. Any fragments outside of the screen are discard and the outputted by the vertex shader are interpolated across the fragments. Fragments behind others are also discarded due to depth testing.
-* Fragment Shader - invoked for every fragment that isn't discarded. Deterines which framebuffer the fragments are written to and with which color and depth values.
-* Color Blending - Applies operations to mix different fragments that map to the same pixel in the frame buffer. Fragments can simply overwrite each other, be additive or multiplicative.
+* Tessellation Shader - allows you to divide geometry based on certain rules to increase mesh quality (e.g. brick walls
+and staircases look less flat when nearby)
+* Geometry shader - runs on every primitive and can discard it or output more primitives. Similar to tesselation shader,
+ but geom shader performance is worse than tesselation shaders (unless on Intel Integrated Graphics? - I'll need to check this)
+* Raserization - represents primitves into fragments. These are pixel elements that they fill on the frame buffer. Any
+fragments outside of the screen are discard and the outputted by the vertex shader are interpolated across the fragments.
+Fragments behind others are also discarded due to depth testing.
+* Fragment Shader - invoked for every fragment that isn't discarded. Deterines which framebuffer the fragments are written
+to and with which color and depth values.
+* Color Blending - Applies operations to mix different fragments that map to the same pixel in the frame buffer.
+ Fragments can simply overwrite each other, be additive or multiplicative.
+
+Vertex Shader, Tessellation, Geometry Shader, and Fragment Shader are stages in the pipeline which can be programmed
+and adjusted by the programmer.
+
+Older APIs like OpenGL and Direct3D allow you to change any pipeline settings at will with calls like `glBlendFunc` and
+`OMSetBlendState`. In *Vulkan*, the pipeline is almost completely immutable, so the pipeline must be created from scratch
+if shader need to change. While less flexible on the surface, this allows for greater optimization and performance in the
+long run.
+
+### Shader Language ###
+One of the interesting things about Vulkan is that the format Vulkan reads shader is via the SPIR-V format, which is a
+bytecode format. The bytecode format allows for safe compilation amongst many platforms and is a good standard for Vulkan.
+Luckily, for people rendering in Vulkan, we can still follow the GLSL format and write human readable shader code. There
+is a compiler which compiles GLSL into bytecode and ensures that we write valid GLSL code.
