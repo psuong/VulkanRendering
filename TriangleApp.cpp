@@ -1,5 +1,6 @@
 ﻿#define GLFW_INCLUDE_VULKAN
 
+#include "FileHelper.h"
 #include "TriangleApp.h"
 #include <algorithm>
 #include <GLFW/glfw3.h>
@@ -464,6 +465,9 @@ namespace vulkan_rendering {
     }
 
     void TriangleApp::create_graphics_pipeline() {
+        auto vertex_shader   = Read_File("shaders/vert.spv");
+        auto fragment_shader = Read_File("shaders/frag.spv");
 
+        throw new std::runtime_error("create_graphics_pipeline not implemented!");
     }
 }
