@@ -471,10 +471,6 @@ namespace vulkan_rendering {
         auto vertex_shader_module   = create_shader_module(vertex_shader);
         auto fragment_shader_module = create_shader_module(fragment_shader);
 
-        throw new std::runtime_error("create_graphics_pipeline not implemented!");
-
-        // TODO: Integrate the shaders into the pipeline.
-
         VkPipelineShaderStageCreateInfo vertex_pipeline_info = {};
         vertex_pipeline_info.sType                           = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         vertex_pipeline_info.stage                           = VK_SHADER_STAGE_VERTEX_BIT;
