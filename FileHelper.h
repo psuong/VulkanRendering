@@ -12,7 +12,7 @@ namespace vulkan_rendering {
         // ate: start at the end of the file and read it as a binary file.
         std::ifstream file(file_name, std::ios::ate | std::ios::binary);
 
-        if (!file.is_open) {
+        if (!file.is_open()) {
             throw std::runtime_error("Failed to open file!");
         }
 
