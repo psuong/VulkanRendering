@@ -468,6 +468,8 @@ namespace vulkan_rendering {
         auto vertex_shader   = Read_File("shaders/vert.spv");
         auto fragment_shader = Read_File("shaders/frag.spv");
 
+        // Shader modules can be destroyed as soon as the pipeline creation is finished, so rather than scope bound them
+        // to the class, we can provide the closure around a function instead.
         auto vertex_shader_module   = create_shader_module(vertex_shader);
         auto fragment_shader_module = create_shader_module(fragment_shader);
 
@@ -477,6 +479,9 @@ namespace vulkan_rendering {
         vertex_pipeline_info.module                          = vertex_shader_module;
         vertex_pipeline_info.pName                           = "main";
 
+        // Another neat trick is to allow pSpecializationInfo and define various kinds of constants for different stages 
+        // of the pipeline workflow.
+
         VkPipelineShaderStageCreateInfo fragment_pipeline_info = {};
         fragment_pipeline_info.sType                           = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
         fragment_pipeline_info.stage                           = VK_SHADER_STAGE_FRAGMENT_BIT;
@@ -484,6 +489,18 @@ namespace vulkan_rendering {
         fragment_pipeline_info.pName                           = "main";
 
         auto shader_stages = { vertex_pipeline_info, fragment_pipeline_info };
+
+        // Vertex input
+        VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
+        vertex_input_info.sType                                = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        vertex_input_info.vertexBindingDescriptionCount        = 0;
+        vertex_input_info.vertexAttributeDescriptionCount      = 0;
+
+        // Input asm
+        VkPipelineInputAssemblyStateCreateInfo input_asm       = {};
+        input_asm.sType                                        = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+        input_asm.topology                                     = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        input_asm.primitiveRestartEnable                       = VK_FALSE;
 
         vkDestroyShaderModule(device, vertex_shader_module, nullptr);
         vkDestroyShaderModule(device, vertex_shader_module, nullptr);
