@@ -10,7 +10,8 @@ Me playing around with the Vulkan API and providing some notes on basic Vulkan A
   * [Swap Extents](#Swap-Extents)
   * [Swap Chain Images](#Swap-Chain-Images)
 * [Graphics Pipeline Basics](#Graphics-Pipeline-Basics)
-  * [Shader Language](#Shader Language)
+  * [Shader Language](#Shader-Language)
+  * [Fixed Function Operations](#Fixed-Function-Operations)
 
 ### Validation-Layers ###
 Validation layers provide basic checking within Vulkan. Vulkan was designed to have minimal overhead so error checking is
@@ -88,3 +89,13 @@ One of the interesting things about Vulkan is that the format Vulkan reads shade
 bytecode format. The bytecode format allows for safe compilation amongst many platforms and is a good standard for Vulkan.
 Luckily, for people rendering in Vulkan, we can still follow the GLSL format and write human readable shader code. There
 is a compiler which compiles GLSL into bytecode and ensures that we write valid GLSL code.
+
+### Fixed Function Operations ###
+By default, Vulkan is explicit meaning that there are no defaults and everything must be specified from the viewport to the
+algorithm to perform colour blending.
+
+#### Vertex Input ####
+`VkPipelineVertexInputStateCreateInfo` is for one a very long and verbose name, but it describes
+
+* Bindings - whether we intend to space data per vertex or per geometry instance.
+* Attributes - which attributes do we need for the vertex shader? Which bindings do we load and what is the offset we load from?

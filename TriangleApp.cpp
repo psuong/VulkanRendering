@@ -496,6 +496,10 @@ namespace vulkan_rendering {
         vertex_input_info.vertexBindingDescriptionCount        = 0;
         vertex_input_info.vertexAttributeDescriptionCount      = 0;
 
+        // TODO: Since I'm hard coding the bindings and attributes directly into the shader, I don't need to specify this yet
+        vertex_input_info.pVertexBindingDescriptions   = nullptr;
+        vertex_input_info.pVertexAttributeDescriptions = nullptr;
+
         // Input asm
         VkPipelineInputAssemblyStateCreateInfo input_asm       = {};
         input_asm.sType                                        = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
