@@ -506,6 +506,30 @@ namespace vulkan_rendering {
         input_asm.topology                                     = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
         input_asm.primitiveRestartEnable                       = VK_FALSE;
 
+        // Viewport
+        VkViewport view_port = {};
+        view_port.x          = 0.0f;
+        view_port.y          = 0.0f;
+        view_port.width      = (float)swap_chain_extent.width;
+        view_port.height     = (float)swap_chain_extent.height;
+        view_port.minDepth   = 0.0f;
+        view_port.maxDepth   = 1.0f;
+
+        // Scissor
+        VkRect2D scissor = {};
+        scissor.offset = {0, 0};
+        scissor.extent = swap_chain_extent;
+
+        // Putting viewport + scissor together
+        VkPipelineViewportStateCreateInfo viewportState = {};
+        viewportState.sType                             = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+        viewportState.viewportCount                     = 1;
+        viewportState.pViewports                        = &view_port;
+        viewportState.scissorCount                      = 1;
+        viewportState.pScissors                         = &scissor;
+
+        // TODO: Integrate the rasterizer
+
         vkDestroyShaderModule(device, vertex_shader_module, nullptr);
         vkDestroyShaderModule(device, vertex_shader_module, nullptr);
     }

@@ -119,3 +119,10 @@ you would rather use instead.
 
 By allowing primitive restarts; this is usually denoated by a constant value (0xFFFF or -1), you can signal the start of
 a new primitive to be drawn.
+
+### Viewport and Scissors ###
+A viewport is effectively the region of a framebuffer and what the output will be rendered to (e.g your screen). You can
+also define a scissor, which effectively defines where the pixels will be stored.
+
+E.g. If you define a viewport of 1920x1080 but then define a scissor to be 1600x900, anything greater than 1600 on the x
+will be discarded and anything above 900 will also be discarded.
