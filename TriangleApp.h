@@ -95,6 +95,8 @@ namespace vulkan_rendering {
         void create_graphics_pipeline();
         VkShaderModule create_shader_module(const std::vector<char>& code);
 
+        VkPipelineLayout pipeline_layout;
+
         static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
             VkDebugUtilsMessageTypeFlagsEXT messageType,
             const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,

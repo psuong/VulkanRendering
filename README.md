@@ -126,3 +126,22 @@ also define a scissor, which effectively defines where the pixels will be stored
 
 E.g. If you define a viewport of 1920x1080 but then define a scissor to be 1600x900, anything greater than 1600 on the x
 will be discarded and anything above 900 will also be discarded.
+
+### Rasterizer ###
+| Mode | Description |
+|------|-------------|
+| VK_POLYGON_MODE_FILL | fill the area of the polygon with fragments |
+| VK_POLYGON_MODE_LINE | polygon edges are drawn as lines |
+|VK_POLYGON_MODE_POINT | polygon vertices are drawn as points |
+
+
+### Colour Blending ###
+There are two ways to perform colour blending
+
+1. Mix the previous colour in the frame buffer and a new colour added to the frame buffer to produce a combined colour.
+2. Combine the old and new values using bitwise operations
+
+There are two structs in Vulkan to do colour blending:
+
+* VkPipelineColorBlendAttachmentState - contains configs per attached frame buffer
+* VkPipelineColorBlendStateCreateInfo - contains the config for the global colour setting

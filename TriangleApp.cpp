@@ -53,6 +53,7 @@ namespace vulkan_rendering {
     }
 
     void TriangleApp::cleanup() {
+        vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
         for (auto image : swap_chain_image_views) {
             vkDestroyImageView(device, image, nullptr);
         }
@@ -273,13 +274,13 @@ namespace vulkan_rendering {
 
         for (const auto& available_format : available_formats) {
             if (available_format.format == VK_FORMAT_B8G8R8A8_UNORM &&
-                available_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+                available_format.colourSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
                 return available_format;
             }
         }
 
         // Default return value for the swap surface support, you can usually just pick your own.
-        // https://stackoverflow.com/questions/12524623/what-are-the-practical-differences-when-working-with-colors-in-a-linear-vs-a-no
+        // https://stackoverflow.com/questions/12524623/what-are-the-practical-differences-when-working-with-colours-in-a-linear-vs-a-no
         return available_formats[0];
     }
 
@@ -391,7 +392,7 @@ namespace vulkan_rendering {
         create_info.surface = surface;
         create_info.minImageCount = image_count;
         create_info.imageFormat = surface_format.format;
-        create_info.imageColorSpace = surface_format.colorSpace;
+        create_info.imageColorSpace = surface_format.colourSpace;
         create_info.imageExtent = extent;
         create_info.imageArrayLayers = 1;                                           // specifies the # of layers each image consists of, normally it's usually just 1.
         create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
@@ -529,6 +530,72 @@ namespace vulkan_rendering {
         viewportState.pScissors                         = &scissor;
 
         // TODO: Integrate the rasterizer
+        VkPipelineRasterizationStateCreateInfo rasterizer = {};
+        rasterizer.sType                                  = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+        rasterizer.depthClampEnable                       = VK_FALSE;
+        rasterizer.rasterizerDiscardEnable                = VK_FALSE; // If enabled to true then nothing would be rendered.
+        rasterizer.polygonMode                            = VK_POLYGON_MODE_FILL;
+        rasterizer.lineWidth                              = 1.0f;
+        rasterizer.depthBiasEnable                        = VK_FALSE;
+        rasterizer.depthBiasConstantFactor                = 0.0f; // Optional
+        rasterizer.depthBiasClamp                         = 0.0f; // Optional
+        rasterizer.depthBiasSlopeFactor                   = 0.0f; // Optional
+
+        // Multisampling
+        VkPipelineMultisampleStateCreateInfo multisampling = {};
+        multisampling.sType                                = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+        multisampling.sampleShadingEnable                  = VK_FALSE;
+        multisampling.rasterizationSamples                 = VK_SAMPLE_COUNT_1_BIT;
+        multisampling.minSampleShading                     = 1.0f; // Optional
+        multisampling.pSampleMask                          = nullptr; // Optional
+        multisampling.alphaToCoverageEnable                = VK_FALSE; // Optional
+        multisampling.alphaToOneEnable                     = VK_FALSE; // Optional
+        
+        // TODO: Add support for depth and stencil testing
+
+        // Colour blending
+        // How does it work?
+        // If we enable blending, we perform the following operations: 
+        // final_colour.rgb = (source_colour_blending * new_colour.rgb) <some-operation> (destination_colour_blend_factor * old_colour).rbg
+        // final_color.a = (source_alpha_blend * new_color.a) <some-operation> (destination_alpha_blend * old_color.a)
+        // If we disable blending, we just take the new colour and overwrite the previous colour
+        // Most likely, we would want to perform some sort of colour lerping based on the alpha
+        // final_colour.rgb = new_alpha * new_colour + (1 - newAlpha) * old_colour;
+        // final_colour.a = new_alpha.a;
+        // To use the second option to allow bitwise operations set the logicOpEnabled to true
+
+        VkPipelineColorBlendAttachmentState colour_blend_attachment = {};
+        colour_blend_attachment.colorWriteMask                      = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+        colour_blend_attachment.blendEnable                         = VK_TRUE;
+        colour_blend_attachment.srcColorBlendFactor                 = VK_BLEND_FACTOR_SRC_ALPHA;
+        colour_blend_attachment.dstColorBlendFactor                 = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+        colour_blend_attachment.colorBlendOp                        = VK_BLEND_OP_ADD;
+        colour_blend_attachment.srcAlphaBlendFactor                 = VK_BLEND_FACTOR_ONE;
+        colour_blend_attachment.dstAlphaBlendFactor                 = VK_BLEND_FACTOR_ZERO;
+        colour_blend_attachment.alphaBlendOp                        = VK_BLEND_OP_ADD;
+
+        VkPipelineColorBlendStateCreateInfo colour_blending = {};
+        colour_blending.sType                               = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+        colour_blending.logicOpEnable                       = VK_FALSE;
+        colour_blending.logicOp                             = VK_LOGIC_OP_COPY; // Optional
+        colour_blending.attachmentCount                     = 1;
+        colour_blending.pAttachments                        = &colour_blend_attachment;
+        colour_blending.blendConstants[0]                   = 0.0f; // Optional
+        colour_blending.blendConstants[1]                   = 0.0f; // Optional
+        colour_blending.blendConstants[2]                   = 0.0f; // Optional
+        colour_blending.blendConstants[3]                   = 0.0f; // Optional
+
+        // TODO: Fill out hte pipeline later
+        VkPipelineLayoutCreateInfo pipeline_layout_info = {};
+        pipeline_layout_info.sType                      = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+        pipeline_layout_info.setLayoutCount             = 0; // Optional
+        pipeline_layout_info.pSetLayouts                = nullptr; // Optional
+        pipeline_layout_info.pushConstantRangeCount     = 0; // Optional
+        pipeline_layout_info.pPushConstantRanges        = nullptr; // Optional
+
+        if (vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS) {
+            throw std::runtime_error("failed to create pipeline layout!");
+        }
 
         vkDestroyShaderModule(device, vertex_shader_module, nullptr);
         vkDestroyShaderModule(device, vertex_shader_module, nullptr);
