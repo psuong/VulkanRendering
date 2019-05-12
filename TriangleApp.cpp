@@ -43,6 +43,10 @@ namespace vulkan_rendering {
         };
         select_physical_device(validation);
         create_logical_device();
+        create_swap_chain();
+        create_image_views();
+        create_render_pass();
+        create_graphics_pipeline();
     }
 
     void TriangleApp::main_loop() {
@@ -313,6 +317,9 @@ namespace vulkan_rendering {
         }
     }
 
+    void TriangleApp::create_render_pass() {
+    }
+
     VKAPI_ATTR VkBool32 VKAPI_CALL TriangleApp::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
         VkDebugUtilsMessageTypeFlagsEXT messageType,
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData,
@@ -563,7 +570,6 @@ namespace vulkan_rendering {
         // final_colour.rgb = new_alpha * new_colour + (1 - newAlpha) * old_colour;
         // final_colour.a = new_alpha.a;
         // To use the second option to allow bitwise operations set the logicOpEnabled to true
-
         VkPipelineColorBlendAttachmentState colour_blend_attachment = {};
         colour_blend_attachment.colorWriteMask                      = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
         colour_blend_attachment.blendEnable                         = VK_TRUE;
@@ -598,7 +604,7 @@ namespace vulkan_rendering {
         }
 
         vkDestroyShaderModule(device, vertex_shader_module, nullptr);
-        vkDestroyShaderModule(device, vertex_shader_module, nullptr);
+        vkDestroyShaderModule(device, fragment_shader_module, nullptr);
     }
 
     VkShaderModule TriangleApp::create_shader_module(const std::vector<char>& code) {
@@ -608,7 +614,6 @@ namespace vulkan_rendering {
 
         // NOTE: Reinterpret the pointer.
         create_info.pCode = reinterpret_cast<const uint32_t*>(code.data());
-
 
         VkShaderModule shader_module;
         if (vkCreateShaderModule(device, &create_info, nullptr, &shader_module) != VK_SUCCESS) {

@@ -89,6 +89,7 @@ namespace vulkan_rendering {
         VkSurfaceFormatKHR select_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
         VkPresentModeKHR select_presentation_mode(const std::vector<VkPresentModeKHR>& available_presentations);
         VkExtent2D select_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities);
+        void create_render_pass();
 
         // Image functions
         void create_image_views();
