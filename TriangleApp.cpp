@@ -274,7 +274,7 @@ namespace vulkan_rendering {
 
         for (const auto& available_format : available_formats) {
             if (available_format.format == VK_FORMAT_B8G8R8A8_UNORM &&
-                available_format.colourSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+                available_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
                 return available_format;
             }
         }
@@ -392,9 +392,9 @@ namespace vulkan_rendering {
         create_info.surface = surface;
         create_info.minImageCount = image_count;
         create_info.imageFormat = surface_format.format;
-        create_info.imageColorSpace = surface_format.colourSpace;
+        create_info.imageColorSpace = surface_format.colorSpace;
         create_info.imageExtent = extent;
-        create_info.imageArrayLayers = 1;                                           // specifies the # of layers each image consists of, normally it's usually just 1.
+        create_info.imageArrayLayers = 1;                                  // specifies the # of layers each image consists of, normally it's usually just 1.
         create_info.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
 
         QueueFamilyDevice indices = queue_families(physical_device);
