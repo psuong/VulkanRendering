@@ -60,6 +60,9 @@ namespace vulkan_rendering {
 
         std::vector<VkImageView> swap_chain_image_views;
 
+        VkRenderPass render_pass;
+        VkPipelineLayout pipeline_layout;
+
 #if NDEBUG
         const bool enable_validation_layers = false;
 #else
@@ -95,8 +98,6 @@ namespace vulkan_rendering {
         void create_image_views();
         void create_graphics_pipeline();
         VkShaderModule create_shader_module(const std::vector<char>& code);
-
-        VkPipelineLayout pipeline_layout;
 
         static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
             VkDebugUtilsMessageTypeFlagsEXT messageType,

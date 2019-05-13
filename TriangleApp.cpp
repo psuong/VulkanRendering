@@ -45,6 +45,8 @@ namespace vulkan_rendering {
         create_logical_device();
         create_swap_chain();
         create_image_views();
+
+        // Before we create the pipelinem we need the render pass which defines a lot of the info for the pipeline.
         create_render_pass();
         create_graphics_pipeline();
     }
@@ -58,6 +60,8 @@ namespace vulkan_rendering {
 
     void TriangleApp::cleanup() {
         vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
+        vkDestroyRenderPass(device, render_pass, nullptr);
+
         for (auto image : swap_chain_image_views) {
             vkDestroyImageView(device, image, nullptr);
         }
@@ -317,8 +321,6 @@ namespace vulkan_rendering {
         }
     }
 
-    void TriangleApp::create_render_pass() {
-    }
 
     VKAPI_ATTR VkBool32 VKAPI_CALL TriangleApp::debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT message_severity,
         VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -621,5 +623,71 @@ namespace vulkan_rendering {
         }
 
         return shader_module;
+    }
+
+    // Need to specify how many colours and depth buffers there will be for rendering.
+    void TriangleApp::create_render_pass() {
+        VkAttachmentDescription colour_attachment = {};
+        colour_attachment.format = swap_chain_image_format;
+
+        // Sticking to 1 sample because I'm not doing anything special for this RP.
+        colour_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
+
+        // Load operations: what do we do with the data before rendering?
+        /*
+         * VK_ATTACHMENT_LOAD_OP_LOAD: Preserve the existing contents of the attachment
+         * VK_ATTACHMENT_LOAD_OP_CLEAR: Clear the values to a constant at the start
+         * VK_ATTACHMENT_LOAD_OP_DONT_CARE: Existing contents are undefined; we don't care about them 
+         */
+        colour_attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+
+        // Store operations, what do we do with the data after rendering?
+        /*
+         * VK_ATTACHMENT_STORE_OP_STORE: Rendered contents will be stored in memory and can be read later
+         * VK_ATTACHMENT_STORE_OP_DONT_CARE: Contents of the framebuffer will be undefined after the rendering operation 
+         */
+        // 
+        colour_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+        // Not doing anything with the stencil operations.
+        // Stencil buffer example: https://computergraphics.stackexchange.com/questions/12/what-is-a-stencil-buffer
+        colour_attachment.stencilLoadOp  = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+        colour_attachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+
+        // Layouts determine how the pixels are laid out in memory
+        /* Some of the common layouts in Vulkan
+         * VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL: Images used as color attachment
+         * VK_IMAGE_LAYOUT_PRESENT_SRC_KHR: Images to be presented in the swap chain
+         * VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL: Images to be used as destination for a memory copy operation
+        */
+        colour_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        colour_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+        VkAttachmentReference colour_attach_ref = {};
+        colour_attach_ref.attachment            = 0; // Reference which description to use in the attachment array.
+        colour_attach_ref.layout                = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL; // We want to display colour in an optimal way.
+
+        // The index of the attachment in the array is reference to the layout(location = 0) out vec4 outColour;
+        /* Some other attachments we can use during a subpass.
+         * pInputAttachments      : Attachments that are read from a shader
+         * pResolveAttachments    : Attachments used for multisampling color attachments
+         * pDepthStencilAttachment: Attachment for depth and stencil data
+         * pPreserveAttachments   : Attachments that are not used by this subpass, but for which the data must be preserved 
+         */
+        VkSubpassDescription subpass_desc = {};
+        subpass_desc.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass_desc.colorAttachmentCount = 1;
+        subpass_desc.pColorAttachments    = &colour_attach_ref;
+
+        VkRenderPassCreateInfo render_pass_info = {};
+        render_pass_info.sType                  = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        render_pass_info.attachmentCount        = 1;
+        render_pass_info.pAttachments           = &colour_attachment;
+        render_pass_info.subpassCount           = 1;
+        render_pass_info.pSubpasses             = &subpass_desc;
+
+        if (vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create render pass!");
+        }
     }
 }

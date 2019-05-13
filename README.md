@@ -145,3 +145,7 @@ There are two structs in Vulkan to do colour blending:
 
 * VkPipelineColorBlendAttachmentState - contains configs per attached frame buffer
 * VkPipelineColorBlendStateCreateInfo - contains the config for the global colour setting
+
+## Subpasses ##
+A rendering pipeline with a single render pass can consist of multiple subpasses. Think post processing effects such as,
+edge detection, depth of field, etc.
