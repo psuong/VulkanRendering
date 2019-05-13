@@ -59,6 +59,7 @@ namespace vulkan_rendering {
     }
 
     void TriangleApp::cleanup() {
+        vkDestroyPipeline(device, graphics_pipeline, nullptr);
         vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
         vkDestroyRenderPass(device, render_pass, nullptr);
 
@@ -498,7 +499,7 @@ namespace vulkan_rendering {
         fragment_pipeline_info.module                          = fragment_shader_module;
         fragment_pipeline_info.pName                           = "main";
 
-        auto shader_stages = { vertex_pipeline_info, fragment_pipeline_info };
+        VkPipelineShaderStageCreateInfo shader_stages[] = { vertex_pipeline_info, fragment_pipeline_info };
 
         // Vertex input
         VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
@@ -603,6 +604,25 @@ namespace vulkan_rendering {
 
         if (vkCreatePipelineLayout(device, &pipeline_layout_info, nullptr, &pipeline_layout) != VK_SUCCESS) {
             throw std::runtime_error("failed to create pipeline layout!");
+        }
+
+        VkGraphicsPipelineCreateInfo pipeline_info = {};
+        pipeline_info.sType                        = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+        pipeline_info.stageCount                   = 2;
+        pipeline_info.pStages                      = shader_stages;
+        pipeline_info.pVertexInputState            = &vertex_input_info;
+        pipeline_info.pInputAssemblyState          = &input_asm;
+        pipeline_info.pViewportState               = &viewportState;
+        pipeline_info.pRasterizationState          = &rasterizer;
+        pipeline_info.pMultisampleState            = &multisampling;
+        pipeline_info.pColorBlendState             = &colour_blending;
+        pipeline_info.layout                       = pipeline_layout;
+        pipeline_info.renderPass                   = render_pass;
+        pipeline_info.subpass                      = 0;
+        pipeline_info.basePipelineHandle           = VK_NULL_HANDLE;
+
+        if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create graphics pipeline!");
         }
 
         vkDestroyShaderModule(device, vertex_shader_module, nullptr);

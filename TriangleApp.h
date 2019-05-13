@@ -62,6 +62,7 @@ namespace vulkan_rendering {
 
         VkRenderPass render_pass;
         VkPipelineLayout pipeline_layout;
+        VkPipeline graphics_pipeline;
 
 #if NDEBUG
         const bool enable_validation_layers = false;
