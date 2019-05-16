@@ -49,6 +49,8 @@ namespace vulkan_rendering {
         // Before we create the pipelinem we need the render pass which defines a lot of the info for the pipeline.
         create_render_pass();
         create_graphics_pipeline();
+
+        create_frame_buffers();
     }
 
     void TriangleApp::main_loop() {
@@ -63,7 +65,7 @@ namespace vulkan_rendering {
         vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
         vkDestroyRenderPass(device, render_pass, nullptr);
 
-        for (auto image : swap_chain_image_views) {
+        for (auto image : swapchain_image_views) {
             vkDestroyImageView(device, image, nullptr);
         }
         vkDestroySwapchainKHR(device, swap_chain, nullptr);
@@ -444,7 +446,7 @@ namespace vulkan_rendering {
 
     void TriangleApp::create_image_views() {
         // Resize the buffer to fit all images we want to create.
-        swap_chain_image_views.resize(swap_chain_images.size());
+        swapchain_image_views.resize(swap_chain_images.size());
 
         for (auto i = 0; i < swap_chain_images.size(); i++) {
             VkImageViewCreateInfo create_info = {};
@@ -469,7 +471,7 @@ namespace vulkan_rendering {
             create_info.subresourceRange.baseArrayLayer = 0;
             create_info.subresourceRange.layerCount     = 1;
 
-            if (vkCreateImageView(device, &create_info, nullptr, &swap_chain_image_views[i]) != VK_SUCCESS) {
+            if (vkCreateImageView(device, &create_info, nullptr, &swapchain_image_views[i]) != VK_SUCCESS) {
                 throw std::runtime_error("Failed to create image view!");
             }
         }
@@ -648,6 +650,7 @@ namespace vulkan_rendering {
         return shader_module;
     }
 
+
     // Need to specify how many colours and depth buffers there will be for rendering.
     void TriangleApp::create_render_pass() {
         VkAttachmentDescription colour_attachment = {};
@@ -711,6 +714,24 @@ namespace vulkan_rendering {
 
         if (vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create render pass!");
+        }
+    }
+
+    void TriangleApp::create_frame_buffers() {
+        swapchain_frame_buffers.resize(swapchain_image_views.size());
+
+        for (size_t i = 0; i < swapchain_image_views.size(); i++) {
+            VkImageView attachments = {
+                swapchain_image_views[i]
+            };
+
+            VkFramebufferCreateInfo framebuffer_info = {};
+            // TODO: Set the type
+            // TODO: Set the render pass
+            // TODO: Set the attachment count
+            // TODO: Set the attachments
+            // TODO: Set the swapchain extent width & height
+            // TODO: Set the # of layers
         }
     }
 }
