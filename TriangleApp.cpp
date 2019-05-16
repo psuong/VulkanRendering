@@ -532,12 +532,12 @@ namespace vulkan_rendering {
         scissor.extent = swap_chain_extent;
 
         // Putting viewport + scissor together
-        VkPipelineViewportStateCreateInfo viewportState = {};
-        viewportState.sType                             = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-        viewportState.viewportCount                     = 1;
-        viewportState.pViewports                        = &view_port;
-        viewportState.scissorCount                      = 1;
-        viewportState.pScissors                         = &scissor;
+        VkPipelineViewportStateCreateInfo viewport_state = {};
+        viewport_state.sType                             = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+        viewport_state.viewportCount                     = 1;
+        viewport_state.pViewports                        = &view_port;
+        viewport_state.scissorCount                      = 1;
+        viewport_state.pScissors                         = &scissor;
 
         // TODO: Integrate the rasterizer
         VkPipelineRasterizationStateCreateInfo rasterizer = {};
@@ -612,19 +612,22 @@ namespace vulkan_rendering {
         pipeline_info.pStages                      = shader_stages;
         pipeline_info.pVertexInputState            = &vertex_input_info;
         pipeline_info.pInputAssemblyState          = &input_asm;
-        pipeline_info.pViewportState               = &viewportState;
+        pipeline_info.pViewportState               = &viewport_state;
         pipeline_info.pRasterizationState          = &rasterizer;
         pipeline_info.pMultisampleState            = &multisampling;
         pipeline_info.pColorBlendState             = &colour_blending;
         pipeline_info.layout                       = pipeline_layout;
         pipeline_info.renderPass                   = render_pass;
         pipeline_info.subpass                      = 0;
+
+        // So we can provide a secondary pipeline that is similar to the current pipeline and an index so that we can 
+        // switch between them. It is easier and less expensive to switch between two pipelines that are similar.
         pipeline_info.basePipelineHandle           = VK_NULL_HANDLE;
+        pipeline_info.basePipelineIndex = -1;
 
         if (vkCreateGraphicsPipelines(device, VK_NULL_HANDLE, 1, &pipeline_info, nullptr, &graphics_pipeline) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create graphics pipeline!");
         }
-
         vkDestroyShaderModule(device, vertex_shader_module, nullptr);
         vkDestroyShaderModule(device, fragment_shader_module, nullptr);
     }
