@@ -155,3 +155,6 @@ edge detection, depth of field, etc.
 Command Pools manage memory that is used to store the buffers and command buffers are allocated from them. Command Buffers
 are executed by submitting them to one of the device queues. Each pool can only take command buffers that are submitted on
 a single type of queue.
+
+* VK_COMMAND_POOL_CREATE_TRANSIENT_BIT: Hint that command buffers are rerecorded with new commands very often (may change memory allocation behavior)
+* VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT: Allow command buffers to be rerecorded individually, without this flag they all have to be reset together

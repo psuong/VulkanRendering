@@ -62,6 +62,7 @@ namespace vulkan_rendering {
     }
 
     void TriangleApp::cleanup() {
+        vkDestroyCommandPool(device, command_pool, nullptr);
         for (auto frameBuffer : swapchain_frame_buffers) {
             vkDestroyFramebuffer(device, frameBuffer, nullptr);
         }
@@ -746,6 +747,22 @@ namespace vulkan_rendering {
     }
 
     void TriangleApp::create_command_pool() {
-        throw new std::runtime_error("create_command_pools() not implemented!");
+        QueueFamilyDevice queue_family_devices = queue_families(physical_device);
+
+        VkCommandPoolCreateInfo pool_info = {};
+        pool_info.sType                   = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        pool_info.queueFamilyIndex        = queue_family_devices.graphics_family.value();
+        pool_info.flags                   = 0;
+
+        if (vkCreateCommandPool(device, &pool_info, nullptr, &command_pool) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create the command pool!");
+        }
+    }
+
+    void TriangleApp::create_command_buffers() {
+        command_buffers.resize(swapchain_frame_buffers.size());
+
+        // TODO: Specify the number of buffers and allocators
+        throw new std::runtime_error("create_command_buffers() not fully implemented!");
     }
 }
