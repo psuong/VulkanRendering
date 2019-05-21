@@ -12,6 +12,7 @@ Me playing around with the Vulkan API and providing some notes on basic Vulkan A
 * [Graphics Pipeline Basics](#Graphics-Pipeline-Basics)
   * [Shader Language](#Shader-Language)
   * [Fixed Function Operations](#Fixed-Function-Operations)
+  * [Command Pool](#Command-Pool)
 
 ### Validation-Layers ###
 Validation layers provide basic checking within Vulkan. Vulkan was designed to have minimal overhead so error checking is
@@ -149,3 +150,8 @@ There are two structs in Vulkan to do colour blending:
 ## Subpasses ##
 A rendering pipeline with a single render pass can consist of multiple subpasses. Think post processing effects such as,
 edge detection, depth of field, etc.
+
+## Command Pool ##
+Command Pools manage memory that is used to store the buffers and command buffers are allocated from them. Command Buffers
+are executed by submitting them to one of the device queues. Each pool can only take command buffers that are submitted on
+a single type of queue.

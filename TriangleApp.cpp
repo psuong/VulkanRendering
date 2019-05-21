@@ -51,6 +51,7 @@ namespace vulkan_rendering {
         create_graphics_pipeline();
 
         create_frame_buffers();
+        create_command_pool();
     }
 
     void TriangleApp::main_loop() {
@@ -742,5 +743,9 @@ namespace vulkan_rendering {
                 throw std::runtime_error("Failed to create the frame buffer!");
             }
         }
+    }
+
+    void TriangleApp::create_command_pool() {
+        throw new std::runtime_error("create_command_pools() not implemented!");
     }
 }

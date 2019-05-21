@@ -67,6 +67,9 @@ namespace vulkan_rendering {
         // Frame Buffers
         std::vector<VkFramebuffer> swapchain_frame_buffers;
 
+        // Command Buffer
+        VkCommandPool command_pool;
+
 #if NDEBUG
         const bool enable_validation_layers = false;
 #else
@@ -104,6 +107,7 @@ namespace vulkan_rendering {
         VkShaderModule create_shader_module(const std::vector<char>& code);
 
         void create_frame_buffers();
+        void create_command_pool();
 
         static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
             VkDebugUtilsMessageTypeFlagsEXT messageType,
