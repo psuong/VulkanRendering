@@ -61,6 +61,10 @@ namespace vulkan_rendering {
     }
 
     void TriangleApp::cleanup() {
+        for (auto frameBuffer : swapchain_frame_buffers) {
+            vkDestroyFramebuffer(device, frameBuffer, nullptr);
+        }
+
         vkDestroyPipeline(device, graphics_pipeline, nullptr);
         vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
         vkDestroyRenderPass(device, render_pass, nullptr);
@@ -721,17 +725,22 @@ namespace vulkan_rendering {
         swapchain_frame_buffers.resize(swapchain_image_views.size());
 
         for (size_t i = 0; i < swapchain_image_views.size(); i++) {
-            VkImageView attachments = {
+            VkImageView attachments[] = {
                 swapchain_image_views[i]
             };
 
             VkFramebufferCreateInfo framebuffer_info = {};
-            // TODO: Set the type
-            // TODO: Set the render pass
-            // TODO: Set the attachment count
-            // TODO: Set the attachments
-            // TODO: Set the swapchain extent width & height
-            // TODO: Set the # of layers
+            framebuffer_info.sType                   = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            framebuffer_info.renderPass              = render_pass;
+            framebuffer_info.attachmentCount         = 1;
+            framebuffer_info.pAttachments            = attachments;
+            framebuffer_info.width                   = swap_chain_extent.width;
+            framebuffer_info.height                  = swap_chain_extent.height;
+            framebuffer_info.layers                  = 1;
+
+            if (vkCreateFramebuffer(device, &framebuffer_info, nullptr, &swapchain_frame_buffers[i]) != VK_SUCCESS) {
+                throw std::runtime_error("Failed to create the frame buffer!");
+            }
         }
     }
 }
