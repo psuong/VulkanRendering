@@ -771,5 +771,16 @@ namespace vulkan_rendering {
         if (vkAllocateCommandBuffers(device, &alloc_info, command_buffers.data()) != VK_SUCCESS) {
             throw new std::runtime_error("Failed to allocate command buffers");
         }
+
+        for (size_t i = 0; i < command_buffers.size(); i++) {
+            VkCommandBufferBeginInfo begin_info = {};
+            begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+            begin_info.pInheritanceInfo = nullptr;
+
+            if (vkBeginCommandBuffer(command_buffers[i], &begin_info) != VK_SUCCESS) {
+                throw new std::runtime_error("Failed to begin recording the command buffer!");
+            }
+        }
     }
 }
