@@ -762,7 +762,14 @@ namespace vulkan_rendering {
     void TriangleApp::create_command_buffers() {
         command_buffers.resize(swapchain_frame_buffers.size());
 
-        // TODO: Specify the number of buffers and allocators
-        throw new std::runtime_error("create_command_buffers() not fully implemented!");
+        VkCommandBufferAllocateInfo alloc_info = {};
+        alloc_info.sType                       = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        alloc_info.commandPool                 = command_pool;
+        alloc_info.level                       = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        alloc_info.commandBufferCount          = (uint32_t)command_buffers.size();
+
+        if (vkAllocateCommandBuffers(device, &alloc_info, command_buffers.data()) != VK_SUCCESS) {
+            throw new std::runtime_error("Failed to allocate command buffers");
+        }
     }
 }
