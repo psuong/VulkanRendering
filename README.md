@@ -158,3 +158,14 @@ a single type of queue.
 
 * VK_COMMAND_POOL_CREATE_TRANSIENT_BIT: Hint that command buffers are rerecorded with new commands very often (may change memory allocation behavior)
 * VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT: Allow command buffers to be rerecorded individually, without this flag they all have to be reset together
+
+
+## Command Buffer ##
+We can specify the flags to understand how we intend to use the command buffer. Flags determine how you use the command buffer:
+
+
+| Mode | Description |
+|------|-------------|
+| VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT | The command buffer will be rerecorded right after executing it once. |
+| VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT | This is a secondary command buffer that will be entirely within a single render pass. |
+| VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT | The command buffer can be resubmitted while it is also already pending execution. |

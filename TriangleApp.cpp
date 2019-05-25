@@ -781,6 +781,36 @@ namespace vulkan_rendering {
             if (vkBeginCommandBuffer(command_buffers[i], &begin_info) != VK_SUCCESS) {
                 throw new std::runtime_error("Failed to begin recording the command buffer!");
             }
+
+            VkRenderPassBeginInfo render_pass_info = {};
+            render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            render_pass_info.renderPass = render_pass;
+            render_pass_info.framebuffer = swapchain_frame_buffers[i];
+
+            render_pass_info.renderArea.offset = { 0, 0 };
+            render_pass_info.renderArea.extent = swap_chain_extent;
+
+            VkClearValue clear_color = { 0.0, 0.0, 0.0 };
+            render_pass_info.clearValueCount = 1;
+            render_pass_info.pClearValues = &clear_color;
+
+
+            // First param is the command buffer
+            // Second param specifies the details of the render pass
+            // VK_SUBPASS_CONTENTS_INLINE: The render pass commands will be embedded in the primary command buffer 
+            // itself and no secondary command buffers will be executed.
+            // VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS: The render pass commands will be executed from 
+            // secondary command buffers.
+            vkCmdBeginRenderPass(command_buffers[i], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+
+            vkCmdBindPipeline(command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
+
+            // End the render pass
+            vkCmdEndRenderPass(command_buffers[i]);
+
+            if (vkEndCommandBuffer(command_buffers[i]) != VK_SUCCESS) {
+                throw std::runtime_error("Failed to record command buffer!");
+            }
         }
     }
 }
