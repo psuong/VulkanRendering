@@ -58,10 +58,14 @@ namespace vulkan_rendering {
         while (!glfwWindowShouldClose(window)) {
             // Loop and wait until we check for an event.
             glfwPollEvents();
+            draw_frame();
         }
     }
 
     void TriangleApp::cleanup() {
+        vkDestroySemaphore(device, render_finished_semaphore, nullptr);
+        vkDestroySemaphore(device, image_available_semaphore, nullptr);
+
         vkDestroyCommandPool(device, command_pool, nullptr);
         for (auto frameBuffer : swapchain_frame_buffers) {
             vkDestroyFramebuffer(device, frameBuffer, nullptr);
@@ -794,7 +798,6 @@ namespace vulkan_rendering {
             render_pass_info.clearValueCount = 1;
             render_pass_info.pClearValues = &clear_color;
 
-
             // First param is the command buffer
             // Second param specifies the details of the render pass
             // VK_SUBPASS_CONTENTS_INLINE: The render pass commands will be embedded in the primary command buffer 
@@ -811,6 +814,29 @@ namespace vulkan_rendering {
             if (vkEndCommandBuffer(command_buffers[i]) != VK_SUCCESS) {
                 throw std::runtime_error("Failed to record command buffer!");
             }
+        }
+    }
+
+    void TriangleApp::draw_frame() {
+        // Acquire an image from the swap chain
+        // Execute the command buffer with that image as an attachment to the frame_buffer
+        // Return the image to the swap chain for presentation
+
+        uint32_t image_index;
+        vkAcquireNextImageKHR(device, swap_chain, std::numeric_limits<uint64_t>::max(), image_available_semaphore, 
+            VK_NULL_HANDLE, &image_index);
+
+        // TODO: Submitting the command buffer;
+    }
+
+    void TriangleApp::create_semaphores() {
+        VkSemaphoreCreateInfo semaphore_info = {};
+        semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        if (vkCreateSemaphore(device, &semaphore_info, nullptr, &image_available_semaphore) != VK_SUCCESS ||
+            vkCreateSemaphore(device, &semaphore_info, nullptr, &render_finished_semaphore) != VK_SUCCESS) {
+
+            throw std::runtime_error("Failed to create semaphores");
         }
     }
 }

@@ -71,6 +71,9 @@ namespace vulkan_rendering {
         VkCommandPool command_pool;
         std::vector<VkCommandBuffer> command_buffers;
 
+        VkSemaphore image_available_semaphore;
+        VkSemaphore render_finished_semaphore;
+
 #if NDEBUG
         const bool enable_validation_layers = false;
 #else
@@ -108,10 +111,13 @@ namespace vulkan_rendering {
         VkShaderModule create_shader_module(const std::vector<char>& code);
 
         void create_frame_buffers();
-
         // Command Pools
         void create_command_pool();
         void create_command_buffers();
+
+        // Main drawing
+        void draw_frame();
+        void create_semaphores();
 
         static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
             VkDebugUtilsMessageTypeFlagsEXT messageType,
