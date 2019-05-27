@@ -6,6 +6,7 @@
 #include <GLFW/glfw3.h>
 #include <iostream>
 #include <set>
+#include <string.h>
 #include <vulkan/vulkan.h>
 
 namespace vulkan_rendering {

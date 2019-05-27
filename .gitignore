@@ -379,3 +379,9 @@ ASALocalRun/
 healthchecksdb
 
 # End of https://www.gitignore.io/api/c++,visualstudio
+
+# Ignoe the custom build files #
+/build*
+
+# Vim #
+*.swp
