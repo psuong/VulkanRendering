@@ -725,6 +725,24 @@ namespace vulkan_rendering {
         if (vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create render pass!");
         }
+
+        // Subpasses automatically take care of image layout transitions. The transitions are controlled by the subpass
+        // dependencies. This specifies the memory and execution dependencies.
+        VkSubpassDependency dependency = {};
+        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass = 0;
+
+        // We want to specify the options to wait for and the stages in which these operations occur.
+        dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.srcAccessMask = 0;
+
+        // The operations should wait on this are in the color attachment stage and involve reading/writing of colour 
+        // attachment.
+        dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
+        render_pass_info.dependencyCount = 1;
+        render_pass_info.pDependencies = &dependency;
     }
 
     void TriangleApp::create_frame_buffers() {
@@ -826,7 +844,42 @@ namespace vulkan_rendering {
         vkAcquireNextImageKHR(device, swap_chain, std::numeric_limits<uint64_t>::max(), image_available_semaphore, 
             VK_NULL_HANDLE, &image_index);
 
-        // TODO: Submitting the command buffer;
+        VkSubmitInfo submit_info = {};
+        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+        // We want to wait during different stages that we can specify in the pipeline.
+        // Our wait signal is that our image has to available before we can render it - makes sense
+        VkSemaphore wait_semaphores[]      = { image_available_semaphore };
+        VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        submit_info.waitSemaphoreCount     = 1;
+        submit_info.pWaitSemaphores        = wait_semaphores;
+        submit_info.pWaitDstStageMask      = wait_stages;
+
+        // We want to submit the command buffers which binds the swap_chain image we acquired during the colour attachment.
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers = &command_buffers[image_index];
+
+        VkSemaphore signal_semaphores[] = { render_finished_semaphore };
+        submit_info.signalSemaphoreCount = 1;
+        submit_info.pSignalSemaphores = signal_semaphores;
+
+        if (vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to submit draw command buffer!");
+        }
+
+        VkPresentInfoKHR present_info = {};
+        present_info.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+        present_info.waitSemaphoreCount = 1;
+        present_info.pWaitSemaphores    = signal_semaphores;
+
+        VkSwapchainKHR swap_chains[] = { swap_chain };
+        present_info.swapchainCount  = 1;
+        present_info.pSwapchains     = swap_chains;
+        present_info.pImageIndices   = &image_index;
+        present_info.pResults        = nullptr;
+
+        vkQueuePresentKHR(present_queue, &present_info);
     }
 
     void TriangleApp::create_semaphores() {
