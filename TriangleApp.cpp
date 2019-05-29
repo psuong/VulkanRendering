@@ -52,6 +52,7 @@ namespace vulkan_rendering {
 
         create_frame_buffers();
         create_command_pool();
+        create_command_buffers();
     }
 
     void TriangleApp::main_loop() {
@@ -663,8 +664,9 @@ namespace vulkan_rendering {
 
     // Need to specify how many colours and depth buffers there will be for rendering.
     void TriangleApp::create_render_pass() {
+
         VkAttachmentDescription colour_attachment = {};
-        colour_attachment.format = swap_chain_image_format;
+        colour_attachment.format                  = swap_chain_image_format;
 
         // Sticking to 1 sample because I'm not doing anything special for this RP.
         colour_attachment.samples = VK_SAMPLE_COUNT_1_BIT;
@@ -697,7 +699,7 @@ namespace vulkan_rendering {
          * VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL: Images to be used as destination for a memory copy operation
         */
         colour_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        colour_attachment.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+        colour_attachment.finalLayout   = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
         VkAttachmentReference colour_attach_ref = {};
         colour_attach_ref.attachment            = 0; // Reference which description to use in the attachment array.
@@ -714,23 +716,11 @@ namespace vulkan_rendering {
         subpass_desc.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS;
         subpass_desc.colorAttachmentCount = 1;
         subpass_desc.pColorAttachments    = &colour_attach_ref;
-
-        VkRenderPassCreateInfo render_pass_info = {};
-        render_pass_info.sType                  = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
-        render_pass_info.attachmentCount        = 1;
-        render_pass_info.pAttachments           = &colour_attachment;
-        render_pass_info.subpassCount           = 1;
-        render_pass_info.pSubpasses             = &subpass_desc;
-
-        if (vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
-            throw std::runtime_error("Failed to create render pass!");
-        }
-
         // Subpasses automatically take care of image layout transitions. The transitions are controlled by the subpass
         // dependencies. This specifies the memory and execution dependencies.
-        VkSubpassDependency dependency = {};
-        dependency.srcSubpass = VK_SUBPASS_EXTERNAL;
-        dependency.dstSubpass = 0;
+        VkSubpassDependency dependency    = {};
+        dependency.srcSubpass             = VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass             = 0;
 
         // We want to specify the options to wait for and the stages in which these operations occur.
         dependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
@@ -741,8 +731,19 @@ namespace vulkan_rendering {
         dependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
         dependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
 
-        render_pass_info.dependencyCount = 1;
-        render_pass_info.pDependencies = &dependency;
+
+        VkRenderPassCreateInfo render_pass_info = {};
+        render_pass_info.sType                  = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        render_pass_info.attachmentCount        = 1;
+        render_pass_info.pAttachments           = &colour_attachment;
+        render_pass_info.subpassCount           = 1;
+        render_pass_info.pSubpasses             = &subpass_desc;
+        render_pass_info.dependencyCount        = 1;
+        render_pass_info.pDependencies          = &dependency;
+
+        if (vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create render pass!");
+        }
     }
 
     void TriangleApp::create_frame_buffers() {
@@ -774,7 +775,6 @@ namespace vulkan_rendering {
         VkCommandPoolCreateInfo pool_info = {};
         pool_info.sType                   = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         pool_info.queueFamilyIndex        = queue_family_devices.graphics_family.value();
-        pool_info.flags                   = 0;
 
         if (vkCreateCommandPool(device, &pool_info, nullptr, &command_pool) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create the command pool!");
@@ -798,23 +798,21 @@ namespace vulkan_rendering {
             VkCommandBufferBeginInfo begin_info = {};
             begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
             begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
-            begin_info.pInheritanceInfo = nullptr;
 
             if (vkBeginCommandBuffer(command_buffers[i], &begin_info) != VK_SUCCESS) {
                 throw new std::runtime_error("Failed to begin recording the command buffer!");
             }
 
             VkRenderPassBeginInfo render_pass_info = {};
-            render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-            render_pass_info.renderPass = render_pass;
-            render_pass_info.framebuffer = swapchain_frame_buffers[i];
+            render_pass_info.sType                 = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            render_pass_info.renderPass            = render_pass;
+            render_pass_info.framebuffer           = swapchain_frame_buffers[i];
+            render_pass_info.renderArea.offset     = { 0, 0 };
+            render_pass_info.renderArea.extent     = swap_chain_extent;
 
-            render_pass_info.renderArea.offset = { 0, 0 };
-            render_pass_info.renderArea.extent = swap_chain_extent;
-
-            VkClearValue clear_color = { 0.0, 0.0, 0.0 };
+            VkClearValue clear_color         = { 0.0f, 0.0f, 0.0f, 1.0f };
             render_pass_info.clearValueCount = 1;
-            render_pass_info.pClearValues = &clear_color;
+            render_pass_info.pClearValues    = &clear_color;
 
             // First param is the command buffer
             // Second param specifies the details of the render pass
@@ -823,8 +821,8 @@ namespace vulkan_rendering {
             // VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS: The render pass commands will be executed from 
             // secondary command buffers.
             vkCmdBeginRenderPass(command_buffers[i], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
-
             vkCmdBindPipeline(command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
+            vkCmdDraw(command_buffers[i], 3, 1, 0, 0);
 
             // End the render pass
             vkCmdEndRenderPass(command_buffers[i]);
@@ -857,11 +855,11 @@ namespace vulkan_rendering {
 
         // We want to submit the command buffers which binds the swap_chain image we acquired during the colour attachment.
         submit_info.commandBufferCount = 1;
-        submit_info.pCommandBuffers = &command_buffers[image_index];
+        submit_info.pCommandBuffers    = &command_buffers[image_index];
 
-        VkSemaphore signal_semaphores[] = { render_finished_semaphore };
+        VkSemaphore signal_semaphores[]  = { render_finished_semaphore };
         submit_info.signalSemaphoreCount = 1;
-        submit_info.pSignalSemaphores = signal_semaphores;
+        submit_info.pSignalSemaphores    = signal_semaphores;
 
         if (vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE) != VK_SUCCESS) {
             throw std::runtime_error("Failed to submit draw command buffer!");
