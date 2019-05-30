@@ -18,6 +18,8 @@ link_directories("$ENV{VULKAN_SDK}/etc/explicit_layer.d")
 
 find_package(glfw3 3.3 REQUIRED)
 
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 set(CMAKE_CXX_STANDARD 17)
 add_executable(${BIN_NAME} ${SOURCES})
 target_link_libraries(${BIN_NAME} glfw)
