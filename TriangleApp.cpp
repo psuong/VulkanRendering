@@ -29,20 +29,7 @@ namespace vulkan_rendering {
         create_instance();
         setup_debugger();
         create_surface();
-        auto validation = [this](VkPhysicalDevice device) -> bool {
-            QueueFamilyDevice indices = queue_families(device);
-
-            bool extensionsSupported = check_device_extension_support(device);
-
-            bool swapChainAdequate = false;
-            if (extensionsSupported) {
-                SwapChainSupportDetails swapChainSupport = query_swap_chain_support(device);
-                swapChainAdequate = !swapChainSupport.formats.empty() && !swapChainSupport.present_modes.empty();
-            }
-
-            return indices.is_complete() && extensionsSupported&& swapChainAdequate;
-        };
-        select_physical_device(validation);
+        select_physical_device();
         create_logical_device();
         create_swap_chain();
         create_image_views();
@@ -99,36 +86,36 @@ namespace vulkan_rendering {
             throw std::runtime_error("Validation layers requested but not available!");
         }
 
-        VkApplicationInfo app_info = {};
-        app_info.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO;
-        app_info.pApplicationName = "Triangle App";
+        VkApplicationInfo app_info  = {};
+        app_info.sType              = VK_STRUCTURE_TYPE_APPLICATION_INFO;
+        app_info.pApplicationName   = "Triangle App";
         app_info.applicationVersion = VK_MAKE_VERSION(1, 0, 0);
-        app_info.pEngineName = "No Engine";
-        app_info.engineVersion = VK_MAKE_VERSION(1, 0, 0);
-        app_info.apiVersion = VK_API_VERSION_1_0;
+        app_info.pEngineName        = "No Engine";
+        app_info.engineVersion      = VK_MAKE_VERSION(1, 0, 0);
+        app_info.apiVersion         = VK_API_VERSION_1_0;
 
         VkInstanceCreateInfo create_info = {};
-        create_info.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
-        create_info.pApplicationInfo = &app_info;
+        create_info.sType                = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
+        create_info.pApplicationInfo     = &app_info;
 
         uint32_t glfw_extension_count = 0;
         const char** glfw_extension;
 
-        glfw_extension = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
-        create_info.enabledExtensionCount = glfw_extension_count;
+        glfw_extension                      = glfwGetRequiredInstanceExtensions(&glfw_extension_count);
+        create_info.enabledExtensionCount   = glfw_extension_count;
         create_info.ppEnabledExtensionNames = glfw_extension;
-        create_info.enabledLayerCount = 0;
+        create_info.enabledLayerCount       = 0;
 
-        auto extensions = get_required_extensions();
-        create_info.enabledExtensionCount = static_cast<uint32_t>(extensions.size());
+        auto extensions                     = get_required_extensions();
+        create_info.enabledExtensionCount   = static_cast<uint32_t>(extensions.size());
         create_info.ppEnabledExtensionNames = extensions.data();
 
         if (enable_validation_layers) {
-            create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+            create_info.enabledLayerCount   = static_cast<uint32_t>(validation_layers.size());
             create_info.ppEnabledLayerNames = validation_layers.data();
         }
         else {
-            create_info.enabledLayerCount = 0;
+            create_info.enabledLayerCount   = 0;
         }
 
         if (vkCreateInstance(&create_info, nullptr, &instance) != VK_SUCCESS) {
@@ -139,27 +126,27 @@ namespace vulkan_rendering {
     inline void TriangleApp::create_logical_device() {
         QueueFamilyDevice indices = queue_families(physical_device);
 
-        std::vector<VkDeviceQueueCreateInfo> queue_create_info;
+        std::vector<VkDeviceQueueCreateInfo> queue_create_infos;
         std::set<uint32_t> unique_queue_families = { indices.graphics_family.value(), indices.present_family.value() };
 
         float queuePriority = 1.0f;
         for (uint32_t queue_family : unique_queue_families) {
             VkDeviceQueueCreateInfo queueCreateInfo = {};
-            queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
-            queueCreateInfo.queueFamilyIndex = queue_family;
-            queueCreateInfo.queueCount = 1;
-            queueCreateInfo.pQueuePriorities = &queuePriority;
-            queue_create_info.push_back(queueCreateInfo);
+            queueCreateInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+            queueCreateInfo.queueFamilyIndex        = queue_family;
+            queueCreateInfo.queueCount              = 1;
+            queueCreateInfo.pQueuePriorities        = &queuePriority;
+            queue_create_infos.push_back(queueCreateInfo);
         }
 
         VkPhysicalDeviceFeatures device_features = {};
 
-        VkDeviceCreateInfo create_info = {};
-        create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-        create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_info.size());
-        create_info.pQueueCreateInfos = queue_create_info.data();
-        create_info.pEnabledFeatures = &device_features;
-        create_info.enabledExtensionCount = static_cast<uint32_t>(device_extensions.size());
+        VkDeviceCreateInfo create_info      = {};
+        create_info.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        create_info.queueCreateInfoCount    = static_cast<uint32_t>(queue_create_infos.size());
+        create_info.pQueueCreateInfos       = queue_create_infos.data();
+        create_info.pEnabledFeatures        = &device_features;
+        create_info.enabledExtensionCount   = static_cast<uint32_t>(device_extensions.size());
         create_info.ppEnabledExtensionNames = device_extensions.data();
 
         if (enable_validation_layers) {
@@ -240,8 +227,8 @@ namespace vulkan_rendering {
     QueueFamilyDevice TriangleApp::queue_families(VkPhysicalDevice device) {
         QueueFamilyDevice indices;
         uint32_t queue_family_count = 0;
-
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
+
         std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
         vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families.data());
 
@@ -360,22 +347,23 @@ namespace vulkan_rendering {
         }
 
         VkDebugUtilsMessengerCreateInfoEXT create_info = {};
-        create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
+        create_info.sType                              = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        create_info.messageSeverity                    = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
+        create_info.messageType                        = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
-        create_info.pfnUserCallback = debug_callback;
-        create_info.pUserData = nullptr; // Optional
+        create_info.pfnUserCallback                    = debug_callback;
+        create_info.pUserData                          = nullptr; // Optional
 
         if (Create_Debug_Utils_Messenger(instance, &create_info, nullptr, &debug_messenger)) {
             throw new std::runtime_error("Failed to set up the debugger!");
         }
     }
 
-    void TriangleApp::select_physical_device(std::function<bool(VkPhysicalDevice)> validation) {
+    void TriangleApp::select_physical_device() {
         uint32_t device_count = 0;
         vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
+
         if (device_count == 0) {
             throw std::runtime_error("Failed to find a GPU that supports Vulkan!");
         }
@@ -383,11 +371,9 @@ namespace vulkan_rendering {
         std::vector<VkPhysicalDevice> devices(device_count);
         vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
 
-        for (const auto& d : devices) {
-            // TODO: Add a conditional check, possibly pass that as a lambda expression
-            bool is_valid = validation(d);
-            if (is_valid) {
-                physical_device = d;
+        for (const auto& device : devices) {
+            if (is_device_suitable(device)) {
+                physical_device = device;
                 break;
             }
         }
@@ -890,5 +876,19 @@ namespace vulkan_rendering {
 
             throw std::runtime_error("Failed to create semaphores");
         }
+    }
+
+    bool TriangleApp::is_device_suitable(VkPhysicalDevice physical_device) {
+        QueueFamilyDevice devices = queue_families(physical_device);
+        bool extension_support = check_device_extension_support(physical_device);
+
+        bool swapchain_adequate = false;
+
+        if (extension_support) {
+            SwapChainSupportDetails swapchain_support = query_swap_chain_support(physical_device);
+            swapchain_adequate = !swapchain_support.formats.empty() && swapchain_support.present_modes.empty();
+        }
+
+        return devices.is_complete() && extension_support && swapchain_adequate;
     }
 }

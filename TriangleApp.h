@@ -90,13 +90,14 @@ namespace vulkan_rendering {
         void main_loop();
         void cleanup();
         void setup_debugger();
-        void select_physical_device(std::function<bool(VkPhysicalDevice)> validation);
+        void select_physical_device();
         void create_swap_chain();
         void inline create_instance();
         void inline create_logical_device();
         void inline create_surface();
         bool inline check_validation_support();
         bool inline check_device_extension_support(VkPhysicalDevice device);
+        bool inline is_device_suitable(VkPhysicalDevice physical_device);
         std::vector<const char*> get_required_extensions();
         QueueFamilyDevice queue_families(VkPhysicalDevice device);
         SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice device);
