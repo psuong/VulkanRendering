@@ -59,7 +59,8 @@ namespace vulkan_rendering {
             std::vector<const char*> get_required_extensions();
 
             // Debug
-            void setup_debugger();
+            void setup_debug_messenger();
+            void populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT& create_info);
     };
 }
 
