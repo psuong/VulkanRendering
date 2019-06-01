@@ -5,8 +5,10 @@ project(vulkan-rendering)
 set(BIN_NAME "vk-rendering")
 
 set(SOURCES
+    include/ExtensionValidation.h
     include/TriangleApp.h
     src/main.cpp
+    src/ExtensionValidation.cpp
     src/TriangleApp.cpp)
 
 include_directories("$ENV{VULKAN_SDK}/include")

@@ -1,6 +1,8 @@
 ﻿#define GLFW_INCLUDE_VULKAN
 
+#include "../include/ExtensionValidation.h"
 #include "../include/TriangleApp.h"
+
 #include <algorithm>
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -9,6 +11,10 @@
 #include <vulkan/vulkan.h>
 
 namespace vulkan_rendering {
+
+    TriangleApp::TriangleApp() {
+        ext_validation = ExtensionValidation();
+    }
 
     void TriangleApp::run() {
         init_window();
@@ -69,5 +75,16 @@ namespace vulkan_rendering {
         if (vkCreateInstance(&create_info, nullptr, &instance) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create instance!");
         }
+
+        uint32_t extension_count = 0;
+        vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, nullptr);
+        std::vector<VkExtensionProperties> extensions(extension_count);
+        vkEnumerateInstanceExtensionProperties(nullptr, &extension_count, extensions.data());
+
+        // Some debugging here
+        ext_validation.populate(extensions);
+        bool all_valid = ext_validation.validate_glfw_extensions(glfw_extensions);
+
+        std::cout << "Is valid? " << all_valid << std::endl;
     }
 }
