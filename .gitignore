@@ -1,5 +1,5 @@
 # Ignore the custom build files #
-/build*
+/bin*
 
 # Compilation Flags for YCM #
 compile_commands.json
