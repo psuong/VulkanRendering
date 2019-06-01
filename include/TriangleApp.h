@@ -17,10 +17,27 @@ namespace vulkan_rendering {
             TriangleApp();
             void run();
 
+            // static calls
+            static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
+                VkDebugUtilsMessageSeverityFlagBitsEXT msg_severity,
+                VkDebugUtilsMessageTypeFlagsEXT msg_type, const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data,
+                void* p_user_data) {
+
+                std::cerr << "Validation Layer: " << p_callback_data->pMessage << std::endl;
+                return VK_FALSE;
+            }
+
         private:
             // Constants
             const int WIDTH  = 800;
             const int HEIGHT = 600;
+            const std::vector<const char*> validation_layers = { "VK_LAYER_KHRONOS_validation" };
+
+            #if NDEBUG
+            const bool enable_validation_layers = false;
+            #else
+            const bool enable_validation_layers = true;
+            #endif
 
             // Ext validation
             ExtensionValidation ext_validation;
@@ -28,6 +45,7 @@ namespace vulkan_rendering {
             // Variables
             GLFWwindow* window;
             VkInstance instance;
+            VkDebugUtilsMessengerEXT debug_messenger;
 
             // Functions
             void init_window();
@@ -37,6 +55,11 @@ namespace vulkan_rendering {
 
             // Vulkan
             void create_instance();
+            bool check_validation_layers_support();
+            std::vector<const char*> get_required_extensions();
+
+            // Debug
+            void setup_debugger();
     };
 }
 

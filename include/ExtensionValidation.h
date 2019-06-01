@@ -4,6 +4,7 @@
 
 #include <GLFW/glfw3.h>
 #include <set>
+#include <string>
 #include <vector>
 #include <vulkan/vulkan.h>
 
@@ -12,7 +13,7 @@ namespace vulkan_rendering {
     class ExtensionValidation {
 
         private:
-            std::set<const char*> extensions_cache;
+            std::set<std::string> extensions_cache;
 
         public:
             ExtensionValidation();
