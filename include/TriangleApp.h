@@ -2,10 +2,9 @@
 #define TRIANGLE_APP_H
 #define GLFW_INCLUDE_VULKAN
 
-#include "QueueFamilyDevice.h"
-#include "SwapChainSupportDetails.h"
 #include <functional>
 #include <GLFW/glfw3.h>
+#include <iostream>
 #include <vector>
 #include <vulkan/vulkan.h>
 
@@ -17,6 +16,14 @@ namespace vulkan_rendering {
             void run();
 
         private:
+            // Constants
+            const int WIDTH  = 800;
+            const int HEIGHT = 600;
+
+            // Variables
+            GLFWwindow* window;
+
+            // Functions
             void init_window();
             void init_vulkan();
             void main_loop();

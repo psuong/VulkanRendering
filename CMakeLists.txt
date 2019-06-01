@@ -5,12 +5,9 @@ project(vulkan-rendering)
 set(BIN_NAME "vk-rendering")
 
 set(SOURCES
-    FileHelper.h
-    SwapChainSupportDetails.h
-    QueueFamilyDevice.h
-    TriangleApp.h
-    main.cpp
-    TriangleApp.cpp)
+    include/TriangleApp.h
+    src/main.cpp
+    src/TriangleApp.cpp)
 
 include_directories("$ENV{VULKAN_SDK}/include")
 link_directories("$ENV{VULKAN_SDK}/lib") 
