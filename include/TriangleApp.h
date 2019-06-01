@@ -22,12 +22,16 @@ namespace vulkan_rendering {
 
             // Variables
             GLFWwindow* window;
+            VkInstance instance;
 
             // Functions
             void init_window();
             void init_vulkan();
             void main_loop();
             void cleanup();
+
+            // Vulkan
+            void create_instance();
     };
 }
 
