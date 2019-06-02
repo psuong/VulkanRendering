@@ -39,6 +39,8 @@ namespace vulkan_rendering {
             VkDebugUtilsMessengerEXT debug_messenger;
             VkPhysicalDevice physical_device = VK_NULL_HANDLE;
             VkDevice device;
+            VkQueue graphics_queue;
+            VkSurfaceKHR surface;
 
             // Functions
             void init_window();
@@ -60,6 +62,7 @@ namespace vulkan_rendering {
             bool is_device_suitable(VkPhysicalDevice device);
             QueueFamilyIndices find_queue_families(VkPhysicalDevice device);
             void create_logical_device();
+            void create_surface();
     };
 }
 

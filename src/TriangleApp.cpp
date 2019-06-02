@@ -74,6 +74,9 @@ namespace vulkan_rendering {
     void TriangleApp::cleanup() {
         vkDestroyDevice(device, nullptr);
 
+        vkDestroySurfaceKHR(instance, surface, nullptr);
+        vkDestroyInstance(instance, nullptr);
+
         if (enable_validation_layers) {
             std::cout << (instance == nullptr) << std::endl;
             std::cout << (debug_messenger == nullptr) << std::endl;
@@ -114,7 +117,6 @@ namespace vulkan_rendering {
             create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
             create_info.ppEnabledLayerNames = validation_layers.data();
 
-            // TODO: Allow debug messaging
             populate_debug_messenger_create_info(debug_create_info);
             create_info.pNext = (VkDebugUtilsMessengerCreateInfoEXT*)&debug_create_info;
         } else {
@@ -257,8 +259,15 @@ namespace vulkan_rendering {
         queue_create_info.pQueuePriorities = &queue_priority;
 
         VkPhysicalDeviceFeatures device_features = {};
+
         VkDeviceCreateInfo create_info = {};
         create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+        create_info.pQueueCreateInfos = &queue_create_info;
+        create_info.queueCreateInfoCount = 1;
+
+        create_info.pEnabledFeatures = &device_features;
+
         create_info.enabledExtensionCount = 0;
 
         if (enable_validation_layers) {
@@ -270,6 +279,14 @@ namespace vulkan_rendering {
 
         if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create logical device!");
+        }
+
+        vkGetDeviceQueue(device, indices.graphics_family.value(), 0, &graphics_queue);
+    }
+
+    void TriangleApp::create_surface() {
+        if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create window surface!");
         }
     }
 }
