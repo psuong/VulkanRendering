@@ -41,6 +41,7 @@ namespace vulkan_rendering {
             VkDevice device;
             VkQueue graphics_queue;
             VkSurfaceKHR surface;
+            VkQueue present_queue;
 
             // Functions
             void init_window();
