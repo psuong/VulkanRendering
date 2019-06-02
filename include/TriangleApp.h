@@ -18,16 +18,6 @@ namespace vulkan_rendering {
             TriangleApp();
             void run();
 
-            // static calls
-            static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
-                VkDebugUtilsMessageSeverityFlagBitsEXT msg_severity,
-                VkDebugUtilsMessageTypeFlagsEXT msg_type, const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data,
-                void* p_user_data) {
-
-                std::cerr << "Validation Layer: " << p_callback_data->pMessage << std::endl;
-                return VK_FALSE;
-            }
-
         private:
             // Constants
             const int WIDTH  = 800;
