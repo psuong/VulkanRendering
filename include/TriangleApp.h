@@ -46,6 +46,7 @@ namespace vulkan_rendering {
             GLFWwindow* window;
             VkInstance instance;
             VkDebugUtilsMessengerEXT debug_messenger;
+            VkPhysicalDevice physical_device = VK_NULL_HANDLE;
 
             // Functions
             void init_window();
@@ -61,6 +62,10 @@ namespace vulkan_rendering {
             // Debug
             void setup_debug_messenger();
             void populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT& create_info);
+
+            // Device selection
+            void pick_physical_device();
+            bool is_device_suitable(VkPhysicalDevice device);
     };
 }
 

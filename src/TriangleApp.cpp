@@ -178,4 +178,39 @@ namespace vulkan_rendering {
             VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         create_info.pfnUserCallback = debug_callback;
     }
+
+    // Physical Device Selection
+    void TriangleApp::pick_physical_device() {
+        uint32_t device_count = 0;
+
+        vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
+
+        if (device_count == 0) {
+            throw std::runtime_error("Failed to find GPUs with Vulkan support!");
+        }
+
+        std::vector<VkPhysicalDevice> devices(device_count);
+        vkEnumeratePhysicalDevices(instance, &device_count, devices.data());
+
+        for (const auto& device : devices) {
+            if (is_device_suitable(device)) {
+                physical_device = device;
+                break;
+            }
+        }
+
+        if (physical_device == VK_NULL_HANDLE) {
+            throw std::runtime_error("Failed to find a suitable GPU!");
+        }
+    }
+
+    bool TriangleApp::is_device_suitable(VkPhysicalDevice device) {
+        VkPhysicalDeviceProperties device_properties;
+        VkPhysicalDeviceFeatures device_features;
+
+        vkGetPhysicalDeviceProperties(device, &device_properties);
+        vkGetPhysicalDeviceFeatures(device, &device_features);
+
+        return device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && device_features.geometryShader;
+    }
 }
