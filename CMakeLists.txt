@@ -7,6 +7,7 @@ set(BIN_NAME "vk-rendering")
 set(SOURCES
     include/ExtensionValidation.h
     include/TriangleApp.h
+    include/QueueFamilyIndices.h
     src/main.cpp
     src/ExtensionValidation.cpp
     src/TriangleApp.cpp)
