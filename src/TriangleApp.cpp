@@ -55,6 +55,7 @@ namespace vulkan_rendering {
     void TriangleApp::init_vulkan() {
         create_instance();
         setup_debug_messenger();
+        pick_physical_device();
     }
 
     void TriangleApp::main_loop() {
@@ -64,6 +65,8 @@ namespace vulkan_rendering {
     }
 
     void TriangleApp::cleanup() {
+        vkDestroyDevice(device, nullptr);
+
         if (enable_validation_layers) {
             DestroyDebugUtilsMessengerEXT(instance, debug_messenger, nullptr);
         }
@@ -234,5 +237,33 @@ namespace vulkan_rendering {
         }
 
         return indices;
+    }
+
+    void TriangleApp::create_logical_device() {
+        QueueFamilyIndices indices = find_queue_families(physical_device);
+
+        VkDeviceQueueCreateInfo queue_create_info = {};
+        queue_create_info.sType                   = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+        queue_create_info.queueFamilyIndex        = indices.graphics_family.value();
+        queue_create_info.queueCount              = 1;
+
+        float queue_priority = 1.0f;
+        queue_create_info.pQueuePriorities = &queue_priority;
+
+        VkPhysicalDeviceFeatures device_features = {};
+        VkDeviceCreateInfo create_info = {};
+        create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        create_info.enabledExtensionCount = 0;
+
+        if (enable_validation_layers) {
+            create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+            create_info.ppEnabledLayerNames = validation_layers.data();
+        } else {
+            create_info.enabledLayerCount = 0;
+        }
+
+        if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create logical device!");
+        }
     }
 }

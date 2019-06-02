@@ -48,6 +48,7 @@ namespace vulkan_rendering {
             VkInstance instance;
             VkDebugUtilsMessengerEXT debug_messenger;
             VkPhysicalDevice physical_device = VK_NULL_HANDLE;
+            VkDevice device;
 
             // Functions
             void init_window();
@@ -68,6 +69,7 @@ namespace vulkan_rendering {
             void pick_physical_device();
             bool is_device_suitable(VkPhysicalDevice device);
             QueueFamilyIndices find_queue_families(VkPhysicalDevice device);
+            void create_logical_device();
     };
 }
 
