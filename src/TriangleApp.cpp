@@ -1,6 +1,7 @@
 ﻿#define GLFW_INCLUDE_VULKAN
 
 #include "../include/ExtensionValidation.h"
+#include "../include/QueueFamilyIndices.h"
 #include "../include/TriangleApp.h"
 
 #include <algorithm>
@@ -205,12 +206,33 @@ namespace vulkan_rendering {
     }
 
     bool TriangleApp::is_device_suitable(VkPhysicalDevice device) {
-        VkPhysicalDeviceProperties device_properties;
-        VkPhysicalDeviceFeatures device_features;
+        QueueFamilyIndices indices = find_queue_families(device);
 
-        vkGetPhysicalDeviceProperties(device, &device_properties);
-        vkGetPhysicalDeviceFeatures(device, &device_features);
+        return indices.is_complete();
+    }
 
-        return device_properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU && device_features.geometryShader;
+    QueueFamilyIndices TriangleApp::find_queue_families(VkPhysicalDevice device) {
+        QueueFamilyIndices indices;
+
+        uint32_t queue_family_count = 0;
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, nullptr);
+
+        std::vector<VkQueueFamilyProperties> queue_families(queue_family_count);
+        vkGetPhysicalDeviceQueueFamilyProperties(device, &queue_family_count, queue_families.data());
+
+        int i = 0;
+        for (const auto& queue_family : queue_families) {
+            if (queue_family.queueCount > 0 && queue_family.queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+                indices.graphics_family = i;
+            }
+
+            if (indices.is_complete()) {
+                break;
+            }
+
+            i++;
+        }
+
+        return indices;
     }
 }

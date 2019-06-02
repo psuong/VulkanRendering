@@ -3,6 +3,7 @@
 #define GLFW_INCLUDE_VULKAN
 
 #include "ExtensionValidation.h"
+#include "QueueFamilyIndices.h"
 #include <functional>
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -66,6 +67,7 @@ namespace vulkan_rendering {
             // Device selection
             void pick_physical_device();
             bool is_device_suitable(VkPhysicalDevice device);
+            QueueFamilyIndices find_queue_families(VkPhysicalDevice device);
     };
 }
 
