@@ -23,6 +23,7 @@ namespace vulkan_rendering {
             const int WIDTH  = 800;
             const int HEIGHT = 600;
             const std::vector<const char*> validation_layers = { "VK_LAYER_KHRONOS_validation" };
+            const std::vector<const char*> device_extensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
             #if NDEBUG
             const bool enable_validation_layers = false;
@@ -64,6 +65,7 @@ namespace vulkan_rendering {
             QueueFamilyIndices find_queue_families(VkPhysicalDevice device);
             void create_logical_device();
             void create_surface();
+            bool check_device_extension_support(VkPhysicalDevice device);
     };
 }
 

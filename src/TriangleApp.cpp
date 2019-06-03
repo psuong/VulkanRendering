@@ -220,7 +220,9 @@ namespace vulkan_rendering {
     bool TriangleApp::is_device_suitable(VkPhysicalDevice device) {
         QueueFamilyIndices indices = find_queue_families(device);
 
-        return indices.is_complete();
+        bool extension_support = check_device_extension_support(device);
+
+        return indices.is_complete() && extension_support;
     }
 
     QueueFamilyIndices TriangleApp::find_queue_families(VkPhysicalDevice device) {
@@ -280,7 +282,8 @@ namespace vulkan_rendering {
 
         create_info.pEnabledFeatures = &device_features;
 
-        create_info.enabledExtensionCount = 0;
+        create_info.enabledExtensionCount = static_cast<uint32_t>(device_extensions.size());
+        create_info.ppEnabledExtensionNames = device_extensions.data();
 
         if (enable_validation_layers) {
             create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
@@ -300,5 +303,21 @@ namespace vulkan_rendering {
         if (glfwCreateWindowSurface(instance, window, nullptr, &surface) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create window surface!");
         }
+    }
+
+    bool TriangleApp::check_device_extension_support(VkPhysicalDevice device) {
+        uint32_t extension_count;
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, nullptr);
+
+        std::vector<VkExtensionProperties> available_extensions(extension_count);
+        vkEnumerateDeviceExtensionProperties(device, nullptr, &extension_count, available_extensions.data());
+
+        std::set<std::string> required_extensions(device_extensions.begin(), device_extensions.end());
+
+        for (const auto& extension : available_extensions) {
+            required_extensions.erase(extension.extensionName);
+        }
+
+        return required_extensions.empty();
     }
 }
