@@ -416,6 +416,7 @@ namespace vulkan_rendering {
         return available_formats[0];
     }
 
+    // TODO: Use this function
     VkPresentModeKHR TriangleApp::choose_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes) {
         for (const auto& available_present_mode : available_present_modes) {
             if (available_present_mode == VK_PRESENT_MODE_MAILBOX_KHR) {
@@ -428,6 +429,7 @@ namespace vulkan_rendering {
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
+    // TODO: Use this function
     VkExtent2D TriangleApp::choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities) {
         if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
             return capabilities.currentExtent;
