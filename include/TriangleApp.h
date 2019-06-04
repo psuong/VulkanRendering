@@ -4,6 +4,7 @@
 
 #include "ExtensionValidation.h"
 #include "QueueFamilyIndices.h"
+#include "SwapChainSupportDetails.h"
 #include <functional>
 #include <GLFW/glfw3.h>
 #include <iostream>
@@ -66,6 +67,8 @@ namespace vulkan_rendering {
             void create_logical_device();
             void create_surface();
             bool check_device_extension_support(VkPhysicalDevice device);
+            SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice device);
+            VkSurfaceFormatKHR choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
     };
 }
 

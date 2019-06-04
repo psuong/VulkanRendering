@@ -2,6 +2,7 @@
 
 #include "../include/ExtensionValidation.h"
 #include "../include/QueueFamilyIndices.h"
+#include "../include/SwapChainSupportDetails.h"
 #include "../include/TriangleApp.h"
 
 #include <algorithm>
@@ -221,8 +222,14 @@ namespace vulkan_rendering {
         QueueFamilyIndices indices = find_queue_families(device);
 
         bool extension_support = check_device_extension_support(device);
+        bool swap_chain_adequate = false;
 
-        return indices.is_complete() && extension_support;
+        if (extension_support) {
+            SwapChainSupportDetails swap_chain_support = query_swap_chain_support(device);
+            swap_chain_adequate = !swap_chain_support.formats.empty() && !swap_chain_support.present_modes.empty();
+        }
+
+        return indices.is_complete() && extension_support && swap_chain_adequate;
     }
 
     QueueFamilyIndices TriangleApp::find_queue_families(VkPhysicalDevice device) {
@@ -319,5 +326,46 @@ namespace vulkan_rendering {
         }
 
         return required_extensions.empty();
+    }
+
+    SwapChainSupportDetails TriangleApp::query_swap_chain_support(VkPhysicalDevice device) {
+        SwapChainSupportDetails details; 
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(device, surface, &details.capabilities);
+        uint32_t format_count;
+        vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, nullptr);
+
+        if (format_count != 0) {
+            details.formats.resize(format_count);
+            vkGetPhysicalDeviceSurfaceFormatsKHR(device, surface, &format_count, details.formats.data());
+        }
+
+        uint32_t present_mode_count;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_count, nullptr);
+
+        if (present_mode_count != 0) {
+            details.present_modes.resize(present_mode_count);
+            vkGetPhysicalDeviceSurfacePresentModesKHR(device, surface, &present_mode_count, details.present_modes.data());
+        }
+
+        return details;
+    }
+
+    VkSurfaceFormatKHR TriangleApp::choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats) {
+        
+        // This is the best case scenario, we have no formats specified
+        if (available_formats.size() == 1 && available_formats[0].format == VK_FORMAT_UNDEFINED) {
+            // UNORM is the most common format we want to work with, we're not working with SRGB format.
+            return { VK_FORMAT_B8G8R8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+        }
+
+        // Check for a preferred combination
+        for (const auto& available_format : available_formats) {
+            if (available_format.format == VK_FORMAT_B8G8R8_UNORM && available_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+                return available_format;
+            }
+        }
+
+        // Default to the last one if no matches work
+        return available_formats[0];
     }
 }
