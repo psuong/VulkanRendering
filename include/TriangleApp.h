@@ -69,6 +69,8 @@ namespace vulkan_rendering {
             bool check_device_extension_support(VkPhysicalDevice device);
             SwapChainSupportDetails query_swap_chain_support(VkPhysicalDevice device);
             VkSurfaceFormatKHR choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
+            VkPresentModeKHR choose_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes);
+            VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities);
     };
 }
 

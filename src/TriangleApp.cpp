@@ -14,6 +14,10 @@
 
 namespace vulkan_rendering {
 
+    /**
+     * Like delegates in C#, we look up the address of the function and actually invoke it. This is an abstracted
+     * "proxy" to do said operation.
+     */
     VkResult create_debug_utils_messenger_ext(
         VkInstance instance, const VkDebugUtilsMessengerCreateInfoEXT* p_create_info, 
         const VkAllocationCallbacks* p_allocator, VkDebugUtilsMessengerEXT* p_debug_messenger) {
@@ -26,17 +30,28 @@ namespace vulkan_rendering {
         }
     }
 
-    void destroy_debug_utils_messenger_ext(VkInstance instance, VkDebugUtilsMessengerEXT debug_messenger, const VkAllocationCallbacks* p_allocator) {
-        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, "vkDestroyDebugUtilsMessengerEXT");
+    /**
+     * Need to clean up the debugger when ending our process. Vulkan is a very memory manual managed API.
+     */
+    void destroy_debug_utils_messenger_ext(VkInstance instance, VkDebugUtilsMessengerEXT debug_messenger, 
+        const VkAllocationCallbacks* p_allocator) {
+
+        auto func = (PFN_vkDestroyDebugUtilsMessengerEXT) vkGetInstanceProcAddr(instance, 
+            "vkDestroyDebugUtilsMessengerEXT");
         if (func != nullptr) {
             func(instance, debug_messenger, p_allocator);
         }
     }
 
+    /**
+     * VKAPI_ATTR and VKAPI_CALL would ensures that callback called has the right signature for Vulkan to call it.
+     * We want to look through the callback and print out the validation layer's message.
+     */
     static VKAPI_ATTR VkBool32 VKAPI_CALL debug_callback(
         VkDebugUtilsMessageSeverityFlagBitsEXT message_severity, VkDebugUtilsMessageTypeFlagsEXT message_type, 
         const VkDebugUtilsMessengerCallbackDataEXT* p_callback_data, void* p_user_data) {
         std::cerr << "Validation Layer: " << p_callback_data->pMessage << std::endl;
+        return VK_FALSE;
     }
 
     TriangleApp::TriangleApp() {
@@ -93,6 +108,9 @@ namespace vulkan_rendering {
     }
     
     // Vulkan functions
+    /*
+     * Constucts the Vulkan instances with all the required extensions.
+     */
     void TriangleApp::create_instance() {
         if (enable_validation_layers && !check_validation_layers_support()) {
             throw std::runtime_error("Validation layers requested, but not available");
@@ -115,6 +133,9 @@ namespace vulkan_rendering {
         create_info.ppEnabledExtensionNames = extensions.data();
 
         VkDebugUtilsMessengerCreateInfoEXT debug_create_info;
+        /**
+         * We can enable the validation layers and we want to include them into the struct on Vulkan creation.
+         */
         if (enable_validation_layers) {
             create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
             create_info.ppEnabledLayerNames = validation_layers.data();
@@ -133,6 +154,9 @@ namespace vulkan_rendering {
         // TODO: Add the extension validation
     }
 
+    /**
+     * Ensure that we have validation layers support in our instance.
+     */
     bool TriangleApp::check_validation_layers_support() {
         uint32_t layer_count;
         vkEnumerateInstanceLayerProperties(&layer_count, nullptr);
@@ -158,6 +182,10 @@ namespace vulkan_rendering {
         return true;
     }
 
+    /**
+     * So enabling validations is all fun, but there needs to be a way to retrieve those messages to relay back. 
+     * Otherwise debugging is pretty useful. Since I'm using GLFW, I need the required GLFW extensions first.
+     */
     std::vector<const char*> TriangleApp::get_required_extensions() {
         uint32_t glfw_extension_count = 0;
         const char** glfw_extensions;
@@ -166,12 +194,16 @@ namespace vulkan_rendering {
         std::vector<const char*> extensions(glfw_extensions, glfw_extensions + glfw_extension_count);
 
         if (enable_validation_layers) {
+            // Macro here which is equivalent to: VK_EXT_debug_utils
             extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
         }
 
         return extensions;
     }
 
+    /**
+     * Create the debug messenger and populate the messenger if we allow validation layers.
+     */
     void TriangleApp::setup_debug_messenger() {
         if (!enable_validation_layers) return;
 
@@ -183,6 +215,9 @@ namespace vulkan_rendering {
         }
     }
 
+    /**
+     * Populate the debug messenger with the right flags.
+     */
     void TriangleApp::populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT& create_info) {
         create_info = {};
         create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
@@ -367,5 +402,30 @@ namespace vulkan_rendering {
 
         // Default to the last one if no matches work
         return available_formats[0];
+    }
+
+    VkPresentModeKHR TriangleApp::choose_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes) {
+        for (const auto& available_present_mode : available_present_modes) {
+            if (available_present_mode == VK_PRESENT_MODE_MAILBOX_KHR) {
+                return available_present_mode;
+            } else if (available_present_mode == VK_PRESENT_MODE_IMMEDIATE_KHR) {
+                return available_present_mode;
+            }
+        }
+
+        return VK_PRESENT_MODE_FIFO_KHR;
+    }
+
+    VkExtent2D TriangleApp::choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities) {
+        if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
+            return capabilities.currentExtent;
+        } else {
+            VkExtent2D actual_extent = { (uint32_t)WIDTH, (uint32_t)HEIGHT };
+
+            actual_extent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, actual_extent.width));
+            actual_extent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, actual_extent.height));
+
+            return actual_extent;
+        }
     }
 }
