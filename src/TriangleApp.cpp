@@ -228,7 +228,11 @@ namespace vulkan_rendering {
         create_info.pfnUserCallback = debug_callback;
     }
 
-    // Physical Device Selection
+    /**
+     * Physical Device Selection
+     * List all devices available by querying the amount first. Then query all the actual devices and check if the 
+     * physical device supports what we need :). Then we can store it into our physical_device variable.
+     */
     void TriangleApp::pick_physical_device() {
         uint32_t device_count = 0;
 
@@ -253,6 +257,9 @@ namespace vulkan_rendering {
         }
     }
 
+    /**
+     * Check if the device actually fits our needs, that's really it.
+     */
     bool TriangleApp::is_device_suitable(VkPhysicalDevice device) {
         QueueFamilyIndices indices = find_queue_families(device);
 
@@ -267,6 +274,11 @@ namespace vulkan_rendering {
         return indices.is_complete() && extension_support && swap_chain_adequate;
     }
 
+    /**
+     * Queueing families work the same way as extensions. Find the number of devices and check if each queried device 
+     * can support VK_QUEUE_GRAPHICS_BIT when it supports it, add it to the QueeuFamilyIndices struct and break out of 
+     * the loop. In the future, we can make this much more complex.
+     */
     QueueFamilyIndices TriangleApp::find_queue_families(VkPhysicalDevice device) {
         QueueFamilyIndices indices;
 
