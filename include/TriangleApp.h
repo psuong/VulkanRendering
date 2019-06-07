@@ -44,6 +44,10 @@ namespace vulkan_rendering {
             VkQueue graphics_queue;
             VkSurfaceKHR surface;
             VkQueue present_queue;
+            VkSwapchainKHR swap_chain;
+            std::vector<VkImage> swap_chain_images;
+            VkFormat swap_chain_image_format;
+            VkExtent2D swap_chain_extent;
 
             // Functions
             void init_window();
@@ -71,6 +75,7 @@ namespace vulkan_rendering {
             VkSurfaceFormatKHR choose_swap_surface_format(const std::vector<VkSurfaceFormatKHR>& available_formats);
             VkPresentModeKHR choose_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes);
             VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities);
+            void create_swap_chain();
     };
 }
 

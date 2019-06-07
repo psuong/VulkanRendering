@@ -80,6 +80,7 @@ namespace vulkan_rendering {
         create_surface();
         pick_physical_device();
         create_logical_device();
+        create_swap_chain();
     }
 
     void TriangleApp::main_loop() {
@@ -89,21 +90,17 @@ namespace vulkan_rendering {
     }
 
     void TriangleApp::cleanup() {
+        vkDestroySwapchainKHR(device, swap_chain, nullptr);
         vkDestroyDevice(device, nullptr);
+
+        if (enable_validation_layers) {
+            destroy_debug_utils_messenger_ext(instance, debug_messenger, nullptr);
+        }
 
         vkDestroySurfaceKHR(instance, surface, nullptr);
         vkDestroyInstance(instance, nullptr);
 
-        if (enable_validation_layers) {
-            std::cout << (instance == nullptr) << std::endl;
-            std::cout << (debug_messenger == nullptr) << std::endl;
-            destroy_debug_utils_messenger_ext(instance, debug_messenger, nullptr);
-        }
-
-        vkDestroyInstance(instance, nullptr);
-
         glfwDestroyWindow(window);
-
         glfwTerminate();
     }
     
@@ -219,11 +216,11 @@ namespace vulkan_rendering {
      * Populate the debug messenger with the right flags.
      */
     void TriangleApp::populate_debug_messenger_create_info(VkDebugUtilsMessengerCreateInfoEXT& create_info) {
-        create_info = {};
-        create_info.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
-        create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT | 
+        create_info                 = {};
+        create_info.sType           = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT;
+        create_info.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT;
-        create_info.messageType = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT | 
+        create_info.messageType     = VK_DEBUG_UTILS_MESSAGE_TYPE_GENERAL_BIT_EXT |
             VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT | VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
         create_info.pfnUserCallback = debug_callback;
     }
@@ -235,7 +232,6 @@ namespace vulkan_rendering {
      */
     void TriangleApp::pick_physical_device() {
         uint32_t device_count = 0;
-
         vkEnumeratePhysicalDevices(instance, &device_count, nullptr);
 
         if (device_count == 0) {
@@ -320,30 +316,31 @@ namespace vulkan_rendering {
         float queue_priority = 1.0f;
         for (uint32_t queue_family : unique_queue_families) {
             VkDeviceQueueCreateInfo queue_create_info = {};
-            queue_create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-            queue_create_info.queueFamilyIndex = queue_family;
-            queue_create_info.pQueuePriorities = &queue_priority;
+            queue_create_info.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+            queue_create_info.queueCount              = 1;
+            queue_create_info.queueFamilyIndex        = queue_family;
+            queue_create_info.pQueuePriorities        = &queue_priority;
             queue_create_infos.push_back(queue_create_info);
         }
 
         VkPhysicalDeviceFeatures device_features = {};
 
         VkDeviceCreateInfo create_info = {};
-        create_info.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+        create_info.sType              = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
         create_info.queueCreateInfoCount = static_cast<uint32_t>(queue_create_infos.size());
-        create_info.pQueueCreateInfos = queue_create_infos.data();
+        create_info.pQueueCreateInfos    = queue_create_infos.data();
 
         create_info.pEnabledFeatures = &device_features;
 
-        create_info.enabledExtensionCount = static_cast<uint32_t>(device_extensions.size());
+        create_info.enabledExtensionCount   = static_cast<uint32_t>(device_extensions.size());
         create_info.ppEnabledExtensionNames = device_extensions.data();
 
         if (enable_validation_layers) {
-            create_info.enabledLayerCount = static_cast<uint32_t>(validation_layers.size());
+            create_info.enabledLayerCount   = static_cast<uint32_t>(validation_layers.size());
             create_info.ppEnabledLayerNames = validation_layers.data();
         } else {
-            create_info.enabledLayerCount = 0;
+            create_info.enabledLayerCount   = 0;
         }
 
         if (vkCreateDevice(physical_device, &create_info, nullptr, &device) != VK_SUCCESS) {
@@ -407,7 +404,8 @@ namespace vulkan_rendering {
 
         // Check for a preferred combination
         for (const auto& available_format : available_formats) {
-            if (available_format.format == VK_FORMAT_B8G8R8_UNORM && available_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
+            if (available_format.format == VK_FORMAT_B8G8R8_UNORM && 
+                available_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
                 return available_format;
             }
         }
@@ -416,7 +414,6 @@ namespace vulkan_rendering {
         return available_formats[0];
     }
 
-    // TODO: Use this function
     VkPresentModeKHR TriangleApp::choose_swap_present_mode(const std::vector<VkPresentModeKHR>& available_present_modes) {
         for (const auto& available_present_mode : available_present_modes) {
             if (available_present_mode == VK_PRESENT_MODE_MAILBOX_KHR) {
@@ -429,17 +426,85 @@ namespace vulkan_rendering {
         return VK_PRESENT_MODE_FIFO_KHR;
     }
 
-    // TODO: Use this function
     VkExtent2D TriangleApp::choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities) {
         if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
             return capabilities.currentExtent;
         } else {
             VkExtent2D actual_extent = { (uint32_t)WIDTH, (uint32_t)HEIGHT };
 
-            actual_extent.width = std::max(capabilities.minImageExtent.width, std::min(capabilities.maxImageExtent.width, actual_extent.width));
-            actual_extent.height = std::max(capabilities.minImageExtent.height, std::min(capabilities.maxImageExtent.height, actual_extent.height));
+            actual_extent.width = std::max(capabilities.minImageExtent.width, 
+                std::min(capabilities.maxImageExtent.width, actual_extent.width));
+            actual_extent.height = std::max(capabilities.minImageExtent.height, 
+                std::min(capabilities.maxImageExtent.height, actual_extent.height));
 
             return actual_extent;
         }
+    }
+
+    void TriangleApp::create_swap_chain() {
+        SwapChainSupportDetails swap_chain_support = query_swap_chain_support(physical_device);
+        VkSurfaceFormatKHR surface_format          = choose_swap_surface_format(swap_chain_support.formats);
+        VkPresentModeKHR present_mode              = choose_swap_present_mode(swap_chain_support.present_modes);
+        VkExtent2D extent                          = choose_swap_extent(swap_chain_support.capabilities);
+
+        // If we stick with the minimum number of images, then we yield until the internal operations are done
+        // so we request a secondary image count
+        uint32_t image_count = swap_chain_support.capabilities.minImageCount + 1;
+
+        // We want to clamp the image_count to the max amt of images we can support
+        if (swap_chain_support.capabilities.maxImageCount > 0 && image_count >
+            swap_chain_support.capabilities.maxImageCount) {
+            image_count = swap_chain_support.capabilities.maxImageCount;
+        }
+
+        VkSwapchainCreateInfoKHR create_info = {};
+        create_info.sType                    = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
+        create_info.surface                  = surface;
+
+        /**
+         * We want to render directly so we use the VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT, but we can use a separate
+         * image to render to first so that we can apply post processing: 
+         * VK_IMAGE_USAGE_TRANSFER_DST_BIT
+         * We can then perform a mem operation to transfer the rendered img to a swap chain image.
+         */
+        create_info.minImageCount    = image_count;
+        create_info.imageFormat      = surface_format.format;
+        create_info.imageColorSpace  = surface_format.colorSpace;
+        create_info.imageExtent      = extent;
+        create_info.imageArrayLayers = 1;
+        create_info.imageUsage       = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT; 
+
+        QueueFamilyIndices indices      = find_queue_families(physical_device);
+        uint32_t queue_family_indices[] = { indices.graphics_family.value(), indices.present_family.value() };
+
+        if (indices.graphics_family != indices.present_family) {
+            create_info.imageSharingMode      = VK_SHARING_MODE_CONCURRENT;
+            create_info.queueFamilyIndexCount = 2;
+            create_info.pQueueFamilyIndices   = queue_family_indices;
+        } else {
+            create_info.imageSharingMode      = VK_SHARING_MODE_EXCLUSIVE;
+            create_info.queueFamilyIndexCount = 0;
+            create_info.pQueueFamilyIndices   = nullptr;
+        }
+
+        create_info.preTransform   = swap_chain_support.capabilities.currentTransform;
+        create_info.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
+        create_info.presentMode    = present_mode;
+        create_info.clipped        = VK_TRUE;
+
+        // We assume there's only one swap chain, but swap chains can be recreated when you resize the window.
+        create_info.oldSwapchain = VK_NULL_HANDLE;
+
+        if (vkCreateSwapchainKHR(device, &create_info, nullptr, &swap_chain) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create swap chain!");
+        }
+
+        vkGetSwapchainImagesKHR(device, swap_chain, &image_count, nullptr);
+        swap_chain_images.resize(image_count);
+        vkGetSwapchainImagesKHR(device, swap_chain, &image_count, swap_chain_images.data());
+        
+        // Store the swap chain's formats and extents
+        swap_chain_image_format = surface_format.format;
+        swap_chain_extent       = extent;
     }
 }
