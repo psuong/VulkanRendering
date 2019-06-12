@@ -78,6 +78,7 @@ namespace vulkan_rendering {
             VkExtent2D choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities);
             void create_swap_chain();
             void create_image_views();
+            void create_graphics_pipeline();
     };
 }
 

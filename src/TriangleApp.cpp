@@ -82,6 +82,7 @@ namespace vulkan_rendering {
         create_logical_device();
         create_swap_chain();
         create_image_views();
+        create_graphics_pipeline();
     }
 
     void TriangleApp::main_loop() {
@@ -543,5 +544,9 @@ namespace vulkan_rendering {
                 throw std::runtime_error("Failed to create image view");
             }
         }
+    }
+
+    void TriangleApp::create_graphics_pipeline() {
+        throw std::runtime_error("create_graphics_pipeline() not implemented!");
     }
 }
