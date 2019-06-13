@@ -8,6 +8,7 @@ set(SOURCES
     include/ExtensionValidation.h
     include/TriangleApp.h
     include/QueueFamilyIndices.h
+    include/FileHelper.h
     src/main.cpp
     src/ExtensionValidation.cpp
     src/TriangleApp.cpp)
