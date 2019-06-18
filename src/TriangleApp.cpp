@@ -568,6 +568,65 @@ namespace vulkan_rendering {
 
         VkPipelineShaderStageCreateInfo shader_stages[] = { vert_shader_stage_info, frag_shader_stage_info };
 
+        VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
+        vertex_input_info.sType                                = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+        vertex_input_info.vertexBindingDescriptionCount        = 0;
+        vertex_input_info.pVertexBindingDescriptions           = nullptr;
+        vertex_input_info.vertexAttributeDescriptionCount      = 0;
+        vertex_input_info.pVertexAttributeDescriptions         = nullptr;
+
+        VkPipelineInputAssemblyStateCreateInfo input_assembly = {};
+        input_assembly.sType                                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+        input_assembly.topology                               = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        input_assembly.primitiveRestartEnable                 = VK_FALSE;
+
+        VkViewport view_port = {};
+        view_port.x          = 0.0f;
+        view_port.y          = 0.0f;
+        view_port.width      = (float) swap_chain_extent.width;
+        view_port.height     = (float) swap_chain_extent.height;
+        view_port.minDepth   = 0.0f;
+        view_port.maxDepth   = 1.0f;
+
+        VkRect2D scissor = {};
+        scissor.offset   = { 0, 0 };
+        scissor.extent   = swap_chain_extent;
+
+        VkPipelineViewportStateCreateInfo view_port_state = {};
+        view_port_state.sType                             = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+        view_port_state.viewportCount                     = 1;
+        view_port_state.pViewports                        = &view_port;
+        view_port_state.scissorCount                      = 1;
+        view_port_state.pScissors                         = &scissor;
+
+        /**
+         * If we enable depth clamp, then any fragments beyond the near and far planes are clamped to them instead of 
+         * just not rendering them.
+         *
+         * By enabling the discardEnable property, geometry doesn't pass through the rasterizer stage.
+         */
+        VkPipelineRasterizationStateCreateInfo rasterizer = {};
+        rasterizer.sType                                  = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+        rasterizer.depthClampEnable                       = VK_FALSE;
+        rasterizer.rasterizerDiscardEnable                = VK_FALSE;
+        rasterizer.polygonMode                            = VK_POLYGON_MODE_FILL;
+        rasterizer.lineWidth                              = 1.0f;
+
+        /**
+         * We can cull the front, back or even both. Similarly, we can determine whether something is front facing by 
+         * looking at the vertices and determining that they are clockwise.
+         */
+        rasterizer.cullMode  = VK_CULL_MODE_BACK_BIT;
+        rasterizer.frontFace = VK_FRONT_FACE_CLOCKWISE;
+
+        /**
+         * Depth can be used for shadow maps? Need to look into this.
+         */
+        rasterizer.depthBiasEnable         = VK_FALSE;
+        rasterizer.depthBiasConstantFactor = 0.0f;
+        rasterizer.depthBiasClamp          = 0.0f;
+        rasterizer.depthBiasSlopeFactor    = 0.0f;
+
         vkDestroyShaderModule(device, frag_shader_module, nullptr);
         vkDestroyShaderModule(device, vert_shader_module, nullptr);
     }
