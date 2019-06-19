@@ -81,6 +81,7 @@ namespace vulkan_rendering {
             void create_image_views();
             void create_graphics_pipeline();
             VkShaderModule create_shader_module(const std::vector<char>& code);
+            void create_render_pass();
     };
 }
 

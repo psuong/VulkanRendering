@@ -83,6 +83,7 @@ namespace vulkan_rendering {
         create_logical_device();
         create_swap_chain();
         create_image_views();
+        create_render_pass();
         create_graphics_pipeline();
     }
 
@@ -703,5 +704,35 @@ namespace vulkan_rendering {
         }
 
         return shader_module;
+    }
+
+    /**
+     * Vulkan needs to be told about the frame buffer attachments that will be used while renderering. This includes how
+     * many colour and depth buffers there will be, samples per buffer, and how their consents should be used throughout
+     * the renderering operations.
+     */
+    void TriangleApp::create_render_pass() {
+
+        /**
+         * The format of the colour attachments just need to the match the format of the swap chain images.
+         */
+        VkAttachmentDescription color_attachment = {};
+        color_attachment.format                  = swap_chain_image_format;
+        color_attachment.samples                 = VK_SAMPLE_COUNT_1_BIT;
+        
+        /**
+         * The load/store ops determine what we do wit hthe data in the attachment before and after rendering.
+         */
+        color_attachment.loadOp  = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        color_attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
+
+        /**
+         * Images need to be transition to specific layouts that are suitable for the operation that they're going to be
+         * involved in next.
+         */
+        color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+        color_attachment.finalLayout   = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+
+        // TODO: Work on the subpass.
     }
 }
