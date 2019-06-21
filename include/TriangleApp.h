@@ -51,6 +51,7 @@ namespace vulkan_rendering {
             std::vector<VkImageView> swap_chain_image_views;
             VkPipelineLayout pipeline_layout;
             VkRenderPass render_pass;
+            VkPipeline graphics_pipeline;
 
             // Functions
             void init_window();
