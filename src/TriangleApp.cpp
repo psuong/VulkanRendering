@@ -85,6 +85,7 @@ namespace vulkan_rendering {
         create_image_views();
         create_render_pass();
         create_graphics_pipeline();
+        create_frame_buffers();
     }
 
     void TriangleApp::main_loop() {
@@ -94,6 +95,9 @@ namespace vulkan_rendering {
     }
 
     void TriangleApp::cleanup() {
+        for (auto frame_buffer : swap_chain_frame_buffers) {
+            vkDestroyFramebuffer(device, frame_buffer, nullptr);
+        }
         vkDestroyPipeline(device, graphics_pipeline, nullptr);
         vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
         vkDestroyRenderPass(device, render_pass, nullptr);
@@ -774,6 +778,24 @@ namespace vulkan_rendering {
 
         if (vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create render pass!");
+        }
+    }
+
+    void TriangleApp::create_frame_buffers() {
+        swap_chain_frame_buffers.resize(swap_chain_image_views.size());
+        for (size_t i = 0; i < swap_chain_image_views.size(); i++) {
+            VkImageView attachments[] = {
+                swap_chain_image_views[i]
+            };
+
+            VkFramebufferCreateInfo frame_buffer_info = {};
+            frame_buffer_info.sType                   = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
+            frame_buffer_info.renderPass              = render_pass;
+            frame_buffer_info.attachmentCount         = 1;
+            frame_buffer_info.pAttachments            = attachments;
+            frame_buffer_info.width                   = swap_chain_extent.width;
+            frame_buffer_info.height                  = swap_chain_extent.height;
+            frame_buffer_info.layers                  = 1;
         }
     }
 }

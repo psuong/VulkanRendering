@@ -52,6 +52,7 @@ namespace vulkan_rendering {
             VkPipelineLayout pipeline_layout;
             VkRenderPass render_pass;
             VkPipeline graphics_pipeline;
+            std::vector<VkFramebuffer> swap_chain_frame_buffers;
 
             // Functions
             void init_window();
@@ -84,6 +85,7 @@ namespace vulkan_rendering {
             void create_graphics_pipeline();
             VkShaderModule create_shader_module(const std::vector<char>& code);
             void create_render_pass();
+            void create_frame_buffers();
     };
 }
 
