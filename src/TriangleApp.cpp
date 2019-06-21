@@ -95,7 +95,9 @@ namespace vulkan_rendering {
 
     void TriangleApp::cleanup() {
         vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
-        // Desotry the image views b/c we created it.
+        vkDestroyRenderPass(device, render_pass, nullptr);
+
+        // Destroy the image views b/c we created it.
         for (auto image_view : swap_chain_image_views) {
             vkDestroyImageView(device, image_view, nullptr);
         }
@@ -625,9 +627,6 @@ namespace vulkan_rendering {
          * Depth can be used for shadow maps? Need to look into this.
          */
         rasterizer.depthBiasEnable         = VK_FALSE;
-        rasterizer.depthBiasConstantFactor = 0.0f;
-        rasterizer.depthBiasClamp          = 0.0f;
-        rasterizer.depthBiasSlopeFactor    = 0.0f;
 
         /**
          * Multi sampling allows for smoother edges along the edges.
@@ -636,10 +635,6 @@ namespace vulkan_rendering {
         multi_sampling.sType                                = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
         multi_sampling.sampleShadingEnable                  = VK_FALSE;
         multi_sampling.rasterizationSamples                 = VK_SAMPLE_COUNT_1_BIT;
-        multi_sampling.minSampleShading                     = 1.0f;
-        multi_sampling.pSampleMask                          = nullptr;
-        multi_sampling.alphaToCoverageEnable                = VK_FALSE;
-        multi_sampling.alphaToOneEnable                     = VK_FALSE;
 
         /**
          * Not enabling Depth/Stencil testing
@@ -733,6 +728,25 @@ namespace vulkan_rendering {
         color_attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
         color_attachment.finalLayout   = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
-        // TODO: Work on the subpass.
+        // TODO: Reread and understand the subpass directives.
+        VkAttachmentReference color_attachment_ref = {};
+        color_attachment_ref.attachment            = 0;
+        color_attachment_ref.layout                = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+        VkSubpassDescription subpass = {};
+        subpass.pipelineBindPoint    = VK_PIPELINE_BIND_POINT_GRAPHICS;
+        subpass.colorAttachmentCount = 1;
+        subpass.pColorAttachments    = &color_attachment_ref;
+
+        VkRenderPassCreateInfo render_pass_info = {};
+        render_pass_info.sType                  = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+        render_pass_info.attachmentCount        = 1;
+        render_pass_info.pAttachments           = &color_attachment;
+        render_pass_info.subpassCount           = 1;
+        render_pass_info.pSubpasses             = &subpass;
+
+        if (vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create render pass!");
+        }
     }
 }

@@ -50,6 +50,7 @@ namespace vulkan_rendering {
             VkExtent2D swap_chain_extent;
             std::vector<VkImageView> swap_chain_image_views;
             VkPipelineLayout pipeline_layout;
+            VkRenderPass render_pass;
 
             // Functions
             void init_window();
