@@ -86,6 +86,8 @@ namespace vulkan_rendering {
         create_render_pass();
         create_graphics_pipeline();
         create_frame_buffers();
+        create_command_pool();
+        create_command_buffers();
     }
 
     void TriangleApp::main_loop() {
@@ -797,6 +799,10 @@ namespace vulkan_rendering {
             frame_buffer_info.width                   = swap_chain_extent.width;
             frame_buffer_info.height                  = swap_chain_extent.height;
             frame_buffer_info.layers                  = 1;
+
+            if (vkCreateFramebuffer(device, &frame_buffer_info, nullptr, &swap_chain_frame_buffers[i]) != VK_SUCCESS) {
+                throw std::runtime_error("Failed to create frame buffer!");
+            }
         }
     }
 
@@ -813,10 +819,75 @@ namespace vulkan_rendering {
         VkCommandPoolCreateInfo pool_info = {};
         pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
         pool_info.queueFamilyIndex = queue_family_indices.graphics_family.value();
-        pool_info.flags = 0;
 
         if (vkCreateCommandPool(device, &pool_info, nullptr, &command_pool) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create the cmd pool!");
+        }
+    }
+
+    void TriangleApp::create_command_buffers() {
+        command_buffers.resize(swap_chain_frame_buffers.size());
+
+        /*
+         * The level param specifies if the buffer is a primary or secondary buffer.
+         * Primary buffers can be submitted to a queue for execution, but cannot be called from other cmd buffers
+         * Secondary buffers can't be submitted directly but can be called from primary buffers (you can reuse operations on the primary cmd buffers)
+         */
+        VkCommandBufferAllocateInfo alloc_info = {};
+        alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        alloc_info.commandPool = command_pool;
+        alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        alloc_info.commandBufferCount = (uint32_t)command_buffers.size();
+
+        if (vkAllocateCommandBuffers(device, &alloc_info, command_buffers.data()) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to allocate cmd buffers!");
+        }
+
+        for (size_t i = 0; i < command_buffers.size(); i++) {
+            /*
+             * Flags determine how the cmd buffer is going to be used
+             * VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT : the cmd buffer will be rerecorded right after executing it once
+             * VK_COMMAND_BUFFER_USAGE_RENDER_PASS_CONTINUE_BIT : This is a secondary cd buffer that will be entirely within a render pass
+             * VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT: The cmd buffer can be resubmitted while also already pending execution
+             */
+            VkCommandBufferBeginInfo begin_info = {};
+            begin_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+            begin_info.flags = VK_COMMAND_BUFFER_USAGE_SIMULTANEOUS_USE_BIT;
+            begin_info.pInheritanceInfo = nullptr;
+
+            if (vkBeginCommandBuffer(command_buffers[i], &begin_info) != VK_SUCCESS) {
+                throw std::runtime_error("Failed to begin recording cmd buffer!");
+            }
+
+            VkRenderPassBeginInfo render_pass_info = {};
+            render_pass_info.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
+            render_pass_info.renderPass = render_pass;
+            render_pass_info.framebuffer = swap_chain_frame_buffers[i];
+
+            /*
+             * Render area defines where the shaders get loaded and stored. Any pixels outside the region has undefined vals
+             */
+            render_pass_info.renderArea.offset = {0, 0};
+            render_pass_info.renderArea.extent = swap_chain_extent;
+
+            VkClearValue clear_colour = { 0.0f, 0.0f, 0.0f, 1.0f };
+            render_pass_info.clearValueCount = 1;
+            render_pass_info.pClearValues = &clear_colour;
+
+            /*
+             * VK_SUBPASS_CONTENTS_INLINE: The render pass cmds will be embedded in the primary cmd buffer itself, no secondary cmds
+             * will be executed
+             * VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS : The render pass cmds will be executed from the 2ndary buffers
+             */
+            vkCmdBeginRenderPass(command_buffers[i], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
+
+            vkCmdBindPipeline(command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
+            vkCmdDraw(command_buffers[i], 3, 1, 0, 0);
+            vkCmdEndRenderPass(command_buffers[i]);
+
+            if (vkEndCommandBuffer(command_buffers[i]) != VK_SUCCESS) {
+                throw std::runtime_error("Failed to record the command buffer!");
+            }
         }
     }
 }

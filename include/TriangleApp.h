@@ -54,6 +54,7 @@ namespace vulkan_rendering {
             VkPipeline graphics_pipeline;
             std::vector<VkFramebuffer> swap_chain_frame_buffers;
             VkCommandPool command_pool;
+            std::vector<VkCommandBuffer> command_buffers;
 
             // Functions
             void init_window();
@@ -88,6 +89,7 @@ namespace vulkan_rendering {
             void create_render_pass();
             void create_frame_buffers();
             void create_command_pool();
+            void create_command_buffers();
     };
 }
 
