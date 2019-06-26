@@ -97,6 +97,9 @@ namespace vulkan_rendering {
     }
 
     void TriangleApp::cleanup() {
+        vkDestroySemaphore(device, render_finished_semaphore, nullptr);
+        vkDestroySemaphore(device, img_available_semaphore, nullptr);
+
         vkDestroyCommandPool(device, command_pool, nullptr);
         for (auto frame_buffer : swap_chain_frame_buffers) {
             vkDestroyFramebuffer(device, frame_buffer, nullptr);
@@ -888,6 +891,38 @@ namespace vulkan_rendering {
             if (vkEndCommandBuffer(command_buffers[i]) != VK_SUCCESS) {
                 throw std::runtime_error("Failed to record the command buffer!");
             }
+        }
+    }
+
+    /*
+     * Draw frame will grab an available img from the swap chain, execute the cmd buffer with the img, return the img to the swap chain 
+     * for presentation.
+     */
+    void TriangleApp::draw_frame() {
+        uint32_t img_index;
+        vkAcquireNextImageKHR(device, swap_chain, std::numeric_limits<uint64_t>::max(), img_available_semaphore, VK_NULL_HANDLE, &img_index);
+
+        VkSubmitInfo submit_info = {};
+        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+
+        VkSemaphore wait_semaphores[] = { img_available_semaphore };
+        VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+
+        submit_info.waitSemaphoreCount = 1;
+        submit_info.pWaitSemaphores = wait_semaphores;
+        submit_info.pWaitDstStageMask = wait_stages;
+
+        // TODO: Add the command buffer count
+    }
+
+    void TriangleApp::create_semaphores() {
+        VkSemaphoreCreateInfo semaphore_info = {};
+        semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
+
+        if (vkCreateSemaphore(device, &semaphore_info, nullptr, &img_available_semaphore) != VK_SUCCESS ||
+            vkCreateSemaphore(device, &semaphore_info, nullptr, &render_finished_semaphore) != VK_SUCCESS) {
+
+            throw std::runtime_error("Failed to create signals!");
         }
     }
 }

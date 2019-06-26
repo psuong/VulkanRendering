@@ -56,6 +56,9 @@ namespace vulkan_rendering {
             VkCommandPool command_pool;
             std::vector<VkCommandBuffer> command_buffers;
 
+            VkSemaphore img_available_semaphore;
+            VkSemaphore render_finished_semaphore;
+
             // Functions
             void init_window();
             void init_vulkan();
@@ -90,6 +93,10 @@ namespace vulkan_rendering {
             void create_frame_buffers();
             void create_command_pool();
             void create_command_buffers();
+
+            // Let the drawing begin!
+            void draw_frame();
+            void create_semaphores();
     };
 }
 
