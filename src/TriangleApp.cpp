@@ -95,6 +95,7 @@ namespace vulkan_rendering {
     }
 
     void TriangleApp::cleanup() {
+        vkDestroyCommandPool(device, command_pool, nullptr);
         for (auto frame_buffer : swap_chain_frame_buffers) {
             vkDestroyFramebuffer(device, frame_buffer, nullptr);
         }
@@ -796,6 +797,26 @@ namespace vulkan_rendering {
             frame_buffer_info.width                   = swap_chain_extent.width;
             frame_buffer_info.height                  = swap_chain_extent.height;
             frame_buffer_info.layers                  = 1;
+        }
+    }
+
+    void TriangleApp::create_command_pool() {
+        QueueFamilyIndices queue_family_indices = find_queue_families(this->physical_device);
+
+        /**
+         * Cmd buffers are executed by submitting it to a device queue and can only allocate cmd buffers that are submitted to a single
+         * type of queue. 
+         * Two possible command flags for the pool:
+         * VK_COMMAND_POOL_CREATE_TRANSIENT_BIT: indicates that the buffers are rerecorded often
+         * VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT: Allows cmd buffers to be rerecorded individually
+         */
+        VkCommandPoolCreateInfo pool_info = {};
+        pool_info.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+        pool_info.queueFamilyIndex = queue_family_indices.graphics_family.value();
+        pool_info.flags = 0;
+
+        if (vkCreateCommandPool(device, &pool_info, nullptr, &command_pool) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create the cmd pool!");
         }
     }
 }
