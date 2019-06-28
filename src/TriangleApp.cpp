@@ -88,11 +88,13 @@ namespace vulkan_rendering {
         create_frame_buffers();
         create_command_pool();
         create_command_buffers();
+        create_semaphores();
     }
 
     void TriangleApp::main_loop() {
         while (!glfwWindowShouldClose(window)) {
             glfwPollEvents();
+            draw_frame();
         }
     }
 
@@ -371,6 +373,7 @@ namespace vulkan_rendering {
         }
 
         vkGetDeviceQueue(device, indices.graphics_family.value(), 0, &graphics_queue);
+        vkGetDeviceQueue(device, indices.present_family.value(), 0, &present_queue);
     }
 
     void TriangleApp::create_surface() {
@@ -775,12 +778,25 @@ namespace vulkan_rendering {
         subpass.colorAttachmentCount = 1;
         subpass.pColorAttachments    = &color_attachment_ref;
 
+        /**
+         * Subpass dependencies specifiy the mem and execution dependncies between the subpasses. 
+         */
+        VkSubpassDependency dependency = {};
+        dependency.srcSubpass          = VK_SUBPASS_EXTERNAL;
+        dependency.dstSubpass          = 0;
+        dependency.srcStageMask        = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.srcAccessMask       = 0;
+        dependency.dstStageMask        = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+        dependency.dstAccessMask       = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+
         VkRenderPassCreateInfo render_pass_info = {};
         render_pass_info.sType                  = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
         render_pass_info.attachmentCount        = 1;
         render_pass_info.pAttachments           = &color_attachment;
         render_pass_info.subpassCount           = 1;
         render_pass_info.pSubpasses             = &subpass;
+        render_pass_info.dependencyCount        = 1;
+        render_pass_info.pDependencies          = &dependency;
 
         if (vkCreateRenderPass(device, &render_pass_info, nullptr, &render_pass) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create render pass!");
@@ -883,7 +899,6 @@ namespace vulkan_rendering {
              * VK_SUBPASS_CONTENTS_SECONDARY_COMMAND_BUFFERS : The render pass cmds will be executed from the 2ndary buffers
              */
             vkCmdBeginRenderPass(command_buffers[i], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
-
             vkCmdBindPipeline(command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
             vkCmdDraw(command_buffers[i], 3, 1, 0, 0);
             vkCmdEndRenderPass(command_buffers[i]);
@@ -900,19 +915,40 @@ namespace vulkan_rendering {
      */
     void TriangleApp::draw_frame() {
         uint32_t img_index;
-        vkAcquireNextImageKHR(device, swap_chain, std::numeric_limits<uint64_t>::max(), img_available_semaphore, VK_NULL_HANDLE, &img_index);
+        vkAcquireNextImageKHR(device, swap_chain, std::numeric_limits<uint64_t>::max(), img_available_semaphore, 
+            VK_NULL_HANDLE, &img_index);
 
         VkSubmitInfo submit_info = {};
-        submit_info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit_info.sType        = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkSemaphore wait_semaphores[] = { img_available_semaphore };
+        VkSemaphore wait_semaphores[]      = { img_available_semaphore };
         VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
+        submit_info.waitSemaphoreCount     = 1;
+        submit_info.pWaitSemaphores        = wait_semaphores;
+        submit_info.pWaitDstStageMask      = wait_stages;
 
-        submit_info.waitSemaphoreCount = 1;
-        submit_info.pWaitSemaphores = wait_semaphores;
-        submit_info.pWaitDstStageMask = wait_stages;
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers    = &command_buffers[img_index];
 
-        // TODO: Add the command buffer count
+        VkSemaphore signal_semaphores[]  = { render_finished_semaphore };
+        submit_info.signalSemaphoreCount = 1;
+        submit_info.pSignalSemaphores    = signal_semaphores;
+
+        if (vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to submit draw cmd buffer!");
+        }
+
+        VkPresentInfoKHR present_info   = {};
+        present_info.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+        present_info.waitSemaphoreCount = 1;
+        present_info.pWaitSemaphores    = signal_semaphores;
+
+        VkSwapchainKHR swap_chains[] = { swap_chain };
+        present_info.swapchainCount  = 1;
+        present_info.pSwapchains     = swap_chains;
+        present_info.pImageIndices   = &img_index;
+
+        vkQueuePresentKHR(present_queue, &present_info);
     }
 
     void TriangleApp::create_semaphores() {

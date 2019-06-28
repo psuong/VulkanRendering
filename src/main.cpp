@@ -1,6 +1,7 @@
 #include "../include/TriangleApp.h"
 #include <cstdlib>
 #include <iostream>
+#include <fstream>
 
 int main() {
     vulkan_rendering::TriangleApp app;
