@@ -474,7 +474,13 @@ namespace vulkan_rendering {
         if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
             return capabilities.currentExtent;
         } else {
-            VkExtent2D actual_extent = { (uint32_t)WIDTH, (uint32_t)HEIGHT };
+            /**
+             * If we resize the window we need to grab the size of the window again...
+             */
+            // TODO: Handle suboptimal or out of date swap chains
+            int width, height;
+            glfwGetFramebufferSize(window, &width, &height);
+            VkExtent2D actual_extent = { (uint32_t)width, (uint32_t)height };
 
             actual_extent.width = std::max(capabilities.minImageExtent.width, 
                 std::min(capabilities.maxImageExtent.width, actual_extent.width));
