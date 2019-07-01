@@ -107,6 +107,7 @@ namespace vulkan_rendering {
     }
 
     void TriangleApp::cleanup() {
+        cleanup_swap_chain();
         for (int i = 0; i < max_frames_per_flight; i++) {
             vkDestroySemaphore(device, render_finished_semaphores[i], nullptr);
             vkDestroySemaphore(device, img_available_semaphores[i], nullptr);
@@ -114,19 +115,6 @@ namespace vulkan_rendering {
         }
 
         vkDestroyCommandPool(device, command_pool, nullptr);
-        for (auto frame_buffer : swap_chain_frame_buffers) {
-            vkDestroyFramebuffer(device, frame_buffer, nullptr);
-        }
-        vkDestroyPipeline(device, graphics_pipeline, nullptr);
-        vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
-        vkDestroyRenderPass(device, render_pass, nullptr);
-
-        // Destroy the image views b/c we created it.
-        for (auto image_view : swap_chain_image_views) {
-            vkDestroyImageView(device, image_view, nullptr);
-        }
-
-        vkDestroySwapchainKHR(device, swap_chain, nullptr);
         vkDestroyDevice(device, nullptr);
 
         if (enable_validation_layers) {
@@ -138,6 +126,25 @@ namespace vulkan_rendering {
 
         glfwDestroyWindow(window);
         glfwTerminate();
+    }
+
+    void TriangleApp::cleanup_swap_chain() {
+        for (size_t i = 0; i < swap_chain_frame_buffers.size(); i++) {
+            vkDestroyFramebuffer(device, swap_chain_frame_buffers[i], nullptr);
+        }
+
+        vkFreeCommandBuffers(device, command_pool, static_cast<uint32_t>(command_buffers.size()),
+            command_buffers.data());
+
+        vkDestroyPipeline(device, graphics_pipeline, nullptr);
+        vkDestroyPipelineLayout(device, pipeline_layout, nullptr);
+        vkDestroyRenderPass(device, render_pass, nullptr);
+
+        for (size_t i = 0; i < swap_chain_image_views.size(); i++) {
+            vkDestroyImageView(device, swap_chain_image_views[i], nullptr);
+        }
+
+        vkDestroySwapchainKHR(device, swap_chain, nullptr);
     }
     
     // Vulkan functions
@@ -990,5 +997,16 @@ namespace vulkan_rendering {
                 throw std::runtime_error("Failed to create signals!");
             }
         }
+    }
+
+    void TriangleApp::recreate_swap_chain() {
+        vkDeviceWaitIdle(this->device);
+
+        create_swap_chain();
+        create_image_views();
+        create_render_pass();
+        create_graphics_pipeline();
+        create_frame_buffers();
+        create_frame_buffers();
     }
 }

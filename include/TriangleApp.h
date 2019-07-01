@@ -67,6 +67,7 @@ namespace vulkan_rendering {
             void init_vulkan();
             void main_loop();
             void cleanup();
+            void cleanup_swap_chain();
 
             // Vulkan
             void create_instance();
@@ -100,6 +101,8 @@ namespace vulkan_rendering {
             // Let the drawing begin!
             void draw_frame();
             void create_sync_objects();
+
+            void recreate_swap_chain();
     };
 }
 
