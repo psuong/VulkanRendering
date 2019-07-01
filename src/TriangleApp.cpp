@@ -88,7 +88,7 @@ namespace vulkan_rendering {
         create_frame_buffers();
         create_command_pool();
         create_command_buffers();
-        create_semaphores();
+        create_sync_objects();
     }
 
     void TriangleApp::main_loop() {
@@ -96,11 +96,22 @@ namespace vulkan_rendering {
             glfwPollEvents();
             draw_frame();
         }
+
+        // TODO: Check this...
+        // vkQueuePresentKHR(present_queue, present_info);
+
+        /**
+         * Wait for the seamphore to be finished in the frame buffers buffer exiting
+         */
+        vkDeviceWaitIdle(device);
     }
 
     void TriangleApp::cleanup() {
-        vkDestroySemaphore(device, render_finished_semaphore, nullptr);
-        vkDestroySemaphore(device, img_available_semaphore, nullptr);
+        for (int i = 0; i < max_frames_per_flight; i++) {
+            vkDestroySemaphore(device, render_finished_semaphores[i], nullptr);
+            vkDestroySemaphore(device, img_available_semaphores[i], nullptr);
+            vkDestroyFence(device, flight_fences[i], nullptr);
+        }
 
         vkDestroyCommandPool(device, command_pool, nullptr);
         for (auto frame_buffer : swap_chain_frame_buffers) {
@@ -914,14 +925,17 @@ namespace vulkan_rendering {
      * for presentation.
      */
     void TriangleApp::draw_frame() {
+        vkWaitForFences(device, 1, &flight_fences[current_frame], VK_TRUE, std::numeric_limits<uint64_t>::max());
+        vkResetFences(device, 1, &flight_fences[current_frame]);
+
         uint32_t img_index;
-        vkAcquireNextImageKHR(device, swap_chain, std::numeric_limits<uint64_t>::max(), img_available_semaphore, 
-            VK_NULL_HANDLE, &img_index);
+        vkAcquireNextImageKHR(device, swap_chain, std::numeric_limits<uint64_t>::max(), 
+            img_available_semaphores[current_frame], VK_NULL_HANDLE, &img_index);
 
         VkSubmitInfo submit_info = {};
         submit_info.sType        = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 
-        VkSemaphore wait_semaphores[]      = { img_available_semaphore };
+        VkSemaphore wait_semaphores[]      = { img_available_semaphores[current_frame] };
         VkPipelineStageFlags wait_stages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
         submit_info.waitSemaphoreCount     = 1;
         submit_info.pWaitSemaphores        = wait_semaphores;
@@ -930,11 +944,11 @@ namespace vulkan_rendering {
         submit_info.commandBufferCount = 1;
         submit_info.pCommandBuffers    = &command_buffers[img_index];
 
-        VkSemaphore signal_semaphores[]  = { render_finished_semaphore };
+        VkSemaphore signal_semaphores[]  = { render_finished_semaphores[current_frame] };
         submit_info.signalSemaphoreCount = 1;
         submit_info.pSignalSemaphores    = signal_semaphores;
 
-        if (vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE) != VK_SUCCESS) {
+        if (vkQueueSubmit(graphics_queue, 1, &submit_info, flight_fences[current_frame]) != VK_SUCCESS) {
             throw std::runtime_error("Failed to submit draw cmd buffer!");
         }
 
@@ -949,16 +963,32 @@ namespace vulkan_rendering {
         present_info.pImageIndices   = &img_index;
 
         vkQueuePresentKHR(present_queue, &present_info);
+
+        current_frame = (current_frame + 1) % max_frames_per_flight;
     }
 
-    void TriangleApp::create_semaphores() {
+    void TriangleApp::create_sync_objects() {
+        img_available_semaphores.resize(max_frames_per_flight);
+        render_finished_semaphores.resize(max_frames_per_flight);
+        flight_fences.resize(max_frames_per_flight);
+
         VkSemaphoreCreateInfo semaphore_info = {};
         semaphore_info.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
-        if (vkCreateSemaphore(device, &semaphore_info, nullptr, &img_available_semaphore) != VK_SUCCESS ||
-            vkCreateSemaphore(device, &semaphore_info, nullptr, &render_finished_semaphore) != VK_SUCCESS) {
+        VkFenceCreateInfo fence_info = {};
+        /**
+         * Fences are created in the unsignaled state so nothing will render until the fence has been used before.
+         * To solve this, set the fence to be created in the signaled state.
+         */
+        fence_info.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+        fence_info.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-            throw std::runtime_error("Failed to create signals!");
+        for (int i = 0; i < max_frames_per_flight; i++) {
+            if (vkCreateSemaphore(device, &semaphore_info, nullptr, &img_available_semaphores[i]) != VK_SUCCESS ||
+                vkCreateSemaphore(device, &semaphore_info, nullptr, &render_finished_semaphores[i]) != VK_SUCCESS ||
+                vkCreateFence(device, &fence_info, nullptr, &flight_fences[i]) != VK_SUCCESS) {
+                throw std::runtime_error("Failed to create signals!");
+            }
         }
     }
 }

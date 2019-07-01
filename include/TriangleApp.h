@@ -25,6 +25,7 @@ namespace vulkan_rendering {
             const int HEIGHT = 600;
             const std::vector<const char*> validation_layers = { "VK_LAYER_KHRONOS_validation" };
             const std::vector<const char*> device_extensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+            const int max_frames_per_flight = 2;
 
             #if NDEBUG
             const bool enable_validation_layers = false;
@@ -56,8 +57,10 @@ namespace vulkan_rendering {
             VkCommandPool command_pool;
             std::vector<VkCommandBuffer> command_buffers;
 
-            VkSemaphore img_available_semaphore;
-            VkSemaphore render_finished_semaphore;
+            std::vector<VkSemaphore> img_available_semaphores;
+            std::vector<VkSemaphore> render_finished_semaphores;
+            std::vector<VkFence> flight_fences;
+            size_t current_frame = 0;
 
             // Functions
             void init_window();
@@ -96,7 +99,7 @@ namespace vulkan_rendering {
 
             // Let the drawing begin!
             void draw_frame();
-            void create_semaphores();
+            void create_sync_objects();
     };
 }
 
