@@ -55,6 +55,11 @@ namespace vulkan_rendering {
         return VK_FALSE;
     }
 
+    static void frame_buffer_resize_callback(GLFWwindow* window, int width, int height) {
+        auto app = reinterpret_cast<TriangleApp*>(glfwGetWindowUserPointer(window));
+        app->frame_buffer_resized_flag = true;
+    }
+
     TriangleApp::TriangleApp() {
         ext_validation = ExtensionValidation();
     }
@@ -73,6 +78,8 @@ namespace vulkan_rendering {
         glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
 
         window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+        glfwSetWindowUserPointer(window, this);
+        glfwSetFramebufferSizeCallback(window, frame_buffer_resize_callback);
     }
 
     void TriangleApp::init_vulkan() {
@@ -985,7 +992,8 @@ namespace vulkan_rendering {
 
         result = vkQueuePresentKHR(present_queue, &present_info);
 
-        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || frame_buffer_resized_flag) {
+            frame_buffer_resized_flag = true;
             recreate_swap_chain();
         } else if (result != VK_SUCCESS) {
             throw std::runtime_error("Failed to present swap chain img!");
@@ -1020,6 +1028,13 @@ namespace vulkan_rendering {
     }
 
     void TriangleApp::recreate_swap_chain() {
+        int width = 0, height = 0;
+
+        while (width == 0 || height == 0) {
+            glfwGetFramebufferSize(window, &width, &height);
+            glfwWaitEvents();
+        }
+
         vkDeviceWaitIdle(this->device);
 
         create_swap_chain();

@@ -16,6 +16,8 @@ namespace vulkan_rendering {
     class TriangleApp {
 
         public:
+            bool frame_buffer_resized_flag = false;
+
             TriangleApp();
             void run();
 
@@ -61,6 +63,7 @@ namespace vulkan_rendering {
             std::vector<VkSemaphore> render_finished_semaphores;
             std::vector<VkFence> flight_fences;
             size_t current_frame = 0;
+
 
             // Functions
             void init_window();
