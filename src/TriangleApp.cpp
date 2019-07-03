@@ -939,11 +939,17 @@ namespace vulkan_rendering {
      */
     void TriangleApp::draw_frame() {
         vkWaitForFences(device, 1, &flight_fences[current_frame], VK_TRUE, std::numeric_limits<uint64_t>::max());
-        vkResetFences(device, 1, &flight_fences[current_frame]);
 
         uint32_t img_index;
-        vkAcquireNextImageKHR(device, swap_chain, std::numeric_limits<uint64_t>::max(), 
+        VkResult result = vkAcquireNextImageKHR(device, swap_chain, std::numeric_limits<uint64_t>::max(), 
             img_available_semaphores[current_frame], VK_NULL_HANDLE, &img_index);
+
+        if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+            recreate_swap_chain();
+            return;
+        } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
+            throw std::runtime_error("Failed to acquire swap chain img!");
+        }
 
         VkSubmitInfo submit_info = {};
         submit_info.sType        = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -961,6 +967,8 @@ namespace vulkan_rendering {
         submit_info.signalSemaphoreCount = 1;
         submit_info.pSignalSemaphores    = signal_semaphores;
 
+        vkResetFences(device, 1, &flight_fences[current_frame]);
+
         if (vkQueueSubmit(graphics_queue, 1, &submit_info, flight_fences[current_frame]) != VK_SUCCESS) {
             throw std::runtime_error("Failed to submit draw cmd buffer!");
         }
@@ -975,7 +983,13 @@ namespace vulkan_rendering {
         present_info.pSwapchains     = swap_chains;
         present_info.pImageIndices   = &img_index;
 
-        vkQueuePresentKHR(present_queue, &present_info);
+        result = vkQueuePresentKHR(present_queue, &present_info);
+
+        if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR) {
+            recreate_swap_chain();
+        } else if (result != VK_SUCCESS) {
+            throw std::runtime_error("Failed to present swap chain img!");
+        }
 
         current_frame = (current_frame + 1) % max_frames_per_flight;
     }
