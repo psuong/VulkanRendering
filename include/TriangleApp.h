@@ -63,7 +63,8 @@ namespace vulkan_rendering {
             std::vector<VkSemaphore> render_finished_semaphores;
             std::vector<VkFence> flight_fences;
             size_t current_frame = 0;
-
+            VkBuffer vertex_buffer;
+            VkDeviceMemory vertex_buffer_memory;
 
             // Functions
             void init_window();
@@ -104,8 +105,9 @@ namespace vulkan_rendering {
             // Let the drawing begin!
             void draw_frame();
             void create_sync_objects();
-
             void recreate_swap_chain();
+            void create_vertex_buffer();
+            uint32_t find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags props);
     };
 }
 

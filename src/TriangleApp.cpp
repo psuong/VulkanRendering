@@ -95,6 +95,7 @@ namespace vulkan_rendering {
         create_graphics_pipeline();
         create_frame_buffers();
         create_command_pool();
+        create_vertex_buffer();
         create_command_buffers();
         create_sync_objects();
     }
@@ -116,6 +117,9 @@ namespace vulkan_rendering {
 
     void TriangleApp::cleanup() {
         cleanup_swap_chain();
+        vkDestroyBuffer(device, vertex_buffer, nullptr);
+        vkFreeMemory(device, vertex_buffer_memory, nullptr);
+
         for (int i = 0; i < max_frames_per_flight; i++) {
             vkDestroySemaphore(device, render_finished_semaphores[i], nullptr);
             vkDestroySemaphore(device, img_available_semaphores[i], nullptr);
@@ -1056,5 +1060,49 @@ namespace vulkan_rendering {
         create_graphics_pipeline();
         create_frame_buffers();
         create_frame_buffers();
+    }
+
+    void TriangleApp::create_vertex_buffer() {
+        VkBufferCreateInfo buffer_info = {};
+        buffer_info.sType              = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        buffer_info.size               = sizeof(vertices[0]) * vertices.size();
+        buffer_info.usage              = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        buffer_info.sharingMode        = VK_SHARING_MODE_EXCLUSIVE;
+
+        if (vkCreateBuffer(device, &buffer_info, nullptr, &vertex_buffer) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to create vertex buffer!");
+        }
+
+        VkMemoryRequirements mem_requirements;
+        vkGetBufferMemoryRequirements(device, vertex_buffer, &mem_requirements);
+
+        VkMemoryAllocateInfo alloc_info = {};
+        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        alloc_info.allocationSize = mem_requirements.size;
+        alloc_info.memoryTypeIndex = find_memory_type(mem_requirements.memoryTypeBits,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT);
+
+        if (vkAllocateMemory(device, &alloc_info, nullptr, &vertex_buffer_memory) != VK_SUCCESS) {
+            throw std::runtime_error("Failed to allocate vertex buffer memory!");
+        }
+
+        vkBindBufferMemory(device, vertex_buffer, vertex_buffer_memory, 0);
+    }
+
+    /**
+     * We iterate throughout the memory and determine what kind of memory the space is. If the filter and the bit flag
+     * is 1 and we can allow certain properties within the mem type, then we can return the index.
+     */
+    uint32_t TriangleApp::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags props) {
+        VkPhysicalDeviceMemoryProperties mem_props;
+        vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_props);
+
+        for (uint32_t i = 0; i < mem_props.memoryTypeCount; i++) {
+            if (type_filter & (1 << i) && (mem_props.memoryTypes[i].propertyFlags & props)) {
+                return i;
+            }
+        }
+
+        throw std::runtime_error("Failed to find suitable mem types!");
     }
 }
