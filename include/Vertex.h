@@ -1,6 +1,7 @@
 #ifndef VERTEX_H
 #define VERTEX_H
 
+#include <array>
 #include <glm/glm.hpp>
 #include <vector>
 #include <vulkan/vulkan.h>
@@ -21,8 +22,35 @@ namespace vulkan_rendering {
             VkVertexInputBindingDescription bindings = {};
 
             // TODO: Implement and describe the data layout.
+            VkVertexInputBindingDescription binding_descriptions = {};
+            binding_descriptions.binding                         = 0;
+            binding_descriptions.stride                          = sizeof(Vertex);
+            binding_descriptions.inputRate                       = VK_VERTEX_INPUT_RATE_VERTEX;
 
             return bindings;
+        }
+
+        /**
+         * Binding tells Vulkan from which binding the per vertex data comes in. The location param references the
+         * location directive of the input in the vertex shader.
+         *
+         * The input in the vertex shader with location 0 is the position, which has 2 32 bit floats.
+         *
+         * Formats can be described with the following:
+         * float: VK_FORMAT_R32_SFLOAT
+         * vec2: VK_FORMAT_R32G32_SFLOAT
+         * vec3: VK_FORMAT_R32G32B32_SFLOAT
+         * vec4: VK_FORMAT_R32G32B32A32_SFLOAT
+         */
+        static std::array<VkVertexInputAttributeDescription, 2> get_attribute_descriptions() {
+            std::array<VkVertexInputAttributeDescription, 2> attribute_descriptions = {};
+
+            attribute_descriptions[0].binding = 0;
+            attribute_descriptions[0].location = 0;
+            attribute_descriptions[0].format = VK_FORMAT_R32G32_SINT;
+            attribute_descriptions[0].offset = offsetof(Vertex, pos);
+
+            return attribute_descriptions;
         }
     };
 

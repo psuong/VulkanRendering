@@ -5,6 +5,7 @@
 #include "../include/SwapChainSupportDetails.h"
 #include "../include/TriangleApp.h"
 #include "../include/FileHelper.h"
+#include "../include/Vertex.h"
 
 #include <algorithm>
 #include <GLFW/glfw3.h>
@@ -619,10 +620,22 @@ namespace vulkan_rendering {
 
         VkPipelineVertexInputStateCreateInfo vertex_input_info = {};
         vertex_input_info.sType                                = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+
+        auto binding_description = Vertex::get_binding_descriptions();
+        auto attribute_description = Vertex::get_attribute_descriptions();
+
+        vertex_input_info.vertexBindingDescriptionCount        = 1;
+        vertex_input_info.vertexAttributeDescriptionCount      = static_cast<uint32_t>(attribute_description.size());
+        vertex_input_info.pVertexBindingDescriptions           = &binding_description;
+        vertex_input_info.pVertexAttributeDescriptions         = attribute_description.data();
+
+        // Below is useless when we have vertex bindings available.
+        /*
         vertex_input_info.vertexBindingDescriptionCount        = 0;
         vertex_input_info.pVertexBindingDescriptions           = nullptr;
         vertex_input_info.vertexAttributeDescriptionCount      = 0;
         vertex_input_info.pVertexAttributeDescriptions         = nullptr;
+        */
 
         VkPipelineInputAssemblyStateCreateInfo input_assembly = {};
         input_assembly.sType                                  = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
