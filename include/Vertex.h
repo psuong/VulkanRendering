@@ -19,15 +19,11 @@ namespace vulkan_rendering {
          * if the data should move to the next entry after each instance.
          */
         static VkVertexInputBindingDescription get_binding_descriptions() {
-            VkVertexInputBindingDescription bindings = {};
-
-            // TODO: Implement and describe the data layout.
             VkVertexInputBindingDescription binding_descriptions = {};
             binding_descriptions.binding                         = 0;
             binding_descriptions.stride                          = sizeof(Vertex);
             binding_descriptions.inputRate                       = VK_VERTEX_INPUT_RATE_VERTEX;
-
-            return bindings;
+            return binding_descriptions;
         }
 
         /**
@@ -45,10 +41,15 @@ namespace vulkan_rendering {
         static std::array<VkVertexInputAttributeDescription, 2> get_attribute_descriptions() {
             std::array<VkVertexInputAttributeDescription, 2> attribute_descriptions = {};
 
-            attribute_descriptions[0].binding = 0;
+            attribute_descriptions[0].binding  = 0;
             attribute_descriptions[0].location = 0;
-            attribute_descriptions[0].format = VK_FORMAT_R32G32_SINT;
-            attribute_descriptions[0].offset = offsetof(Vertex, pos);
+            attribute_descriptions[0].format   = VK_FORMAT_R32G32_SFLOAT;
+            attribute_descriptions[0].offset   = offsetof(Vertex, pos);
+
+            attribute_descriptions[1].binding  = 0;
+            attribute_descriptions[1].location = 1;
+            attribute_descriptions[1].format   = VK_FORMAT_R32G32B32_SFLOAT;
+            attribute_descriptions[1].offset   = offsetof(Vertex, colour);
 
             return attribute_descriptions;
         }

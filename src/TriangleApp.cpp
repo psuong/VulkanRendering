@@ -117,6 +117,7 @@ namespace vulkan_rendering {
 
     void TriangleApp::cleanup() {
         cleanup_swap_chain();
+
         vkDestroyBuffer(device, vertex_buffer, nullptr);
         vkFreeMemory(device, vertex_buffer_memory, nullptr);
 
@@ -948,7 +949,12 @@ namespace vulkan_rendering {
              */
             vkCmdBeginRenderPass(command_buffers[i], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
             vkCmdBindPipeline(command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
-            vkCmdDraw(command_buffers[i], 3, 1, 0, 0);
+
+            VkBuffer vertex_buffers[] = { vertex_buffer };
+            VkDeviceSize offsets[]    = { 0 };
+            vkCmdBindVertexBuffers(command_buffers[i], 0, 1, vertex_buffers, offsets);
+
+            vkCmdDraw(command_buffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
             vkCmdEndRenderPass(command_buffers[i]);
 
             if (vkEndCommandBuffer(command_buffers[i]) != VK_SUCCESS) {
@@ -1076,17 +1082,33 @@ namespace vulkan_rendering {
         VkMemoryRequirements mem_requirements;
         vkGetBufferMemoryRequirements(device, vertex_buffer, &mem_requirements);
 
+        /**
+         * Specify the size and the type which derives from the memory requirements of the vertex buffer.
+         */
         VkMemoryAllocateInfo alloc_info = {};
-        alloc_info.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-        alloc_info.allocationSize = mem_requirements.size;
-        alloc_info.memoryTypeIndex = find_memory_type(mem_requirements.memoryTypeBits,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_CACHED_BIT);
+        alloc_info.sType                = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+        alloc_info.allocationSize       = mem_requirements.size;
+        alloc_info.memoryTypeIndex      = find_memory_type(mem_requirements.memoryTypeBits,
+            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
 
         if (vkAllocateMemory(device, &alloc_info, nullptr, &vertex_buffer_memory) != VK_SUCCESS) {
             throw std::runtime_error("Failed to allocate vertex buffer memory!");
         }
 
         vkBindBufferMemory(device, vertex_buffer, vertex_buffer_memory, 0);
+
+        /**
+         * Store the memory and map it to the data pointer.
+         */
+        void* data;
+        vkMapMemory(device, vertex_buffer_memory, 0, buffer_info.size, 0, &data);
+
+        /**
+         * The mapped memory must copy to the buffer so we ensure that at any point in time the memory is the same. So
+         * this can lead to performance problems since we don't flush the memory immediately.
+         */
+        memcpy(data, vertices.data(), (size_t)buffer_info.size);
+        vkUnmapMemory(device, vertex_buffer_memory);
     }
 
     /**
@@ -1098,7 +1120,7 @@ namespace vulkan_rendering {
         vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_props);
 
         for (uint32_t i = 0; i < mem_props.memoryTypeCount; i++) {
-            if (type_filter & (1 << i) && (mem_props.memoryTypes[i].propertyFlags & props)) {
+            if (type_filter & (1 << i) && (mem_props.memoryTypes[i].propertyFlags & props) == props) {
                 return i;
             }
         }
