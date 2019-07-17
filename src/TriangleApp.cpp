@@ -1085,6 +1085,8 @@ namespace vulkan_rendering {
          */
         memcpy(data, vertices.data(), (size_t)size);
         vkUnmapMemory(device, vertex_buffer_memory);
+
+        // TODO: Rework the vertex buffer creation to use a staging buffer technique.
     }
 
     /**
