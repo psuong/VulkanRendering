@@ -29,11 +29,11 @@ namespace vulkan_rendering {
             const std::vector<const char*> device_extensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
             const int max_frames_per_flight = 2;
 
-            #if NDEBUG
+#if NDEBUG
             const bool enable_validation_layers = false;
-            #else
+#else
             const bool enable_validation_layers = true;
-            #endif
+#endif
 
             // Ext validation
             ExtensionValidation ext_validation;
@@ -108,6 +108,9 @@ namespace vulkan_rendering {
             void recreate_swap_chain();
             void create_vertex_buffer();
             uint32_t find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags props);
+
+            void create_buffer(VkDeviceSize size, VkBufferUsageFlags flags, VkMemoryPropertyFlags props, 
+                VkBuffer& buffer, VkDeviceMemory& buffer_mem);
     };
 }
 

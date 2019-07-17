@@ -1069,6 +1069,47 @@ namespace vulkan_rendering {
     }
 
     void TriangleApp::create_vertex_buffer() {
+        VkDeviceSize size = sizeof(vertices[0]) * vertices.size();
+        create_buffer(size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, vertex_buffer,
+            this->vertex_buffer_memory);
+
+        /**
+         * Store the memory and map it to the data pointer.
+         */
+        void* data;
+        vkMapMemory(device, vertex_buffer_memory, 0, size, 0, &data);
+
+        /**
+         * The mapped memory must copy to the buffer so we ensure that at any point in time the memory is the same. So
+         * this can lead to performance problems since we don't flush the memory immediately.
+         */
+        memcpy(data, vertices.data(), (size_t)size);
+        vkUnmapMemory(device, vertex_buffer_memory);
+    }
+
+    /**
+     * We iterate throughout the memory and determine what kind of memory the space is. If the filter and the bit flag
+     * is 1 and we can allow certain properties within the mem type, then we can return the index.
+     */
+    uint32_t TriangleApp::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags props) {
+        VkPhysicalDeviceMemoryProperties mem_props;
+        vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_props);
+
+        for (uint32_t i = 0; i < mem_props.memoryTypeCount; i++) {
+            if (type_filter & (1 << i) && (mem_props.memoryTypes[i].propertyFlags & props) == props) {
+                return i;
+            }
+        }
+
+        throw std::runtime_error("Failed to find suitable mem types!");
+    }
+
+    /**
+     * More generic function so we can create tons of buffers.
+     */
+    void TriangleApp::create_buffer(VkDeviceSize size, VkBufferUsageFlags flags, VkMemoryPropertyFlags props, VkBuffer&
+        buffer, VkDeviceMemory& buffer_mem) {
+
         VkBufferCreateInfo buffer_info = {};
         buffer_info.sType              = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
         buffer_info.size               = sizeof(vertices[0]) * vertices.size();
@@ -1096,35 +1137,5 @@ namespace vulkan_rendering {
         }
 
         vkBindBufferMemory(device, vertex_buffer, vertex_buffer_memory, 0);
-
-        /**
-         * Store the memory and map it to the data pointer.
-         */
-        void* data;
-        vkMapMemory(device, vertex_buffer_memory, 0, buffer_info.size, 0, &data);
-
-        /**
-         * The mapped memory must copy to the buffer so we ensure that at any point in time the memory is the same. So
-         * this can lead to performance problems since we don't flush the memory immediately.
-         */
-        memcpy(data, vertices.data(), (size_t)buffer_info.size);
-        vkUnmapMemory(device, vertex_buffer_memory);
-    }
-
-    /**
-     * We iterate throughout the memory and determine what kind of memory the space is. If the filter and the bit flag
-     * is 1 and we can allow certain properties within the mem type, then we can return the index.
-     */
-    uint32_t TriangleApp::find_memory_type(uint32_t type_filter, VkMemoryPropertyFlags props) {
-        VkPhysicalDeviceMemoryProperties mem_props;
-        vkGetPhysicalDeviceMemoryProperties(physical_device, &mem_props);
-
-        for (uint32_t i = 0; i < mem_props.memoryTypeCount; i++) {
-            if (type_filter & (1 << i) && (mem_props.memoryTypes[i].propertyFlags & props) == props) {
-                return i;
-            }
-        }
-
-        throw std::runtime_error("Failed to find suitable mem types!");
     }
 }
