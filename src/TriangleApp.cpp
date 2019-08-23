@@ -45,6 +45,8 @@ namespace vulkan_rendering {
         }
     }
 
+
+
     /**
      * VKAPI_ATTR and VKAPI_CALL would ensures that callback called has the right signature for Vulkan to call it.
      * We want to look through the callback and print out the validation layer's message.
@@ -1070,23 +1072,33 @@ namespace vulkan_rendering {
 
     void TriangleApp::create_vertex_buffer() {
         VkDeviceSize size = sizeof(vertices[0]) * vertices.size();
-        create_buffer(size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, vertex_buffer,
-            this->vertex_buffer_memory);
+
+        /**
+         * The staging buffer and staging buffer memory allows us to fast copy the original vertbux buffer in temporary 
+         * buffer (double buffering technique).
+         *
+         * VK_BUFFER_USAGE_TRANSFER_SRC_BIT: buffer can be used as a source for a copy.
+         * VK_BUFFER_USAGE_TRANSFER_DST_BIT: buffer can be used as a the pointer to where the copy will go to.
+         */
+        VkBuffer staging_buffer;
+        VkDeviceMemory staging_buffer_memory;
+        create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_buffer_memory);
 
         /**
          * Store the memory and map it to the data pointer.
-         */
-        void* data;
-        vkMapMemory(device, vertex_buffer_memory, 0, size, 0, &data);
-
-        /**
+         *
          * The mapped memory must copy to the buffer so we ensure that at any point in time the memory is the same. So
          * this can lead to performance problems since we don't flush the memory immediately.
          */
-        memcpy(data, vertices.data(), (size_t)size);
-        vkUnmapMemory(device, vertex_buffer_memory);
+        void* data;
+        vkMapMemory(device, staging_buffer_memory, 0, size, 0, &data);
+        memcpy(data, vertices.data(), size);
+        vkUnmapMemory(device, staging_buffer_memory);
 
         // TODO: Rework the vertex buffer creation to use a staging buffer technique.
+        create_buffer(size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, vertex_buffer,
+            this->vertex_buffer_memory);
     }
 
     /**
@@ -1139,5 +1151,23 @@ namespace vulkan_rendering {
         }
 
         vkBindBufferMemory(device, vertex_buffer, vertex_buffer_memory, 0);
+    }
+
+    /**
+     * To do memory based operations, we need to use a cmd_buffer. The buffers are temporary and we can likely handle
+     * this elsewhere. If we create a generic cmd buffer for memory cache optimizations, then we should use a 
+     * VK_COMMAND_POOL_CREATE_TRANSIENT_BIT flag.
+     */
+    void TriangleApp::copy_buffer(VkBuffer src, VkBuffer dst, VkDeviceSize size) {
+        VkCommandBufferAllocateInfo alloc_info = {};
+        alloc_info.sType                       = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        alloc_info.level                       = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        alloc_info.commandPool                 = this->command_pool;
+        alloc_info.commandBufferCount          = 1;
+
+        VkCommandBuffer cmd_buffer;
+        vkAllocateCommandBuffers(device, &alloc_info, &cmd_buffer);
+
+        // TODO: Actually start recording the cmds we intend to do.
     }
 }

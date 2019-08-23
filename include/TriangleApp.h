@@ -111,6 +111,8 @@ namespace vulkan_rendering {
 
             void create_buffer(VkDeviceSize size, VkBufferUsageFlags flags, VkMemoryPropertyFlags props, 
                 VkBuffer& buffer, VkDeviceMemory& buffer_mem);
+            void copy_buffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
+
     };
 }
 
