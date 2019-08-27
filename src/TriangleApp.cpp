@@ -1070,6 +1070,10 @@ namespace vulkan_rendering {
         create_frame_buffers();
     }
 
+    /**
+     * Ultimately the create_buffer_buffer is going to be changed use only a host visible and use a device local buffer 
+     * as the actual vertex buffer.
+     */
     void TriangleApp::create_vertex_buffer() {
         VkDeviceSize buffer_size = sizeof(vertices[0]) * vertices.size();
 
@@ -1090,6 +1094,10 @@ namespace vulkan_rendering {
          *
          * The mapped memory must copy to the buffer so we ensure that at any point in time the memory is the same. So
          * this can lead to performance problems since we don't flush the memory immediately.
+         *
+         * B/c the vertex buffer is now allocated on the device instead, we can't use the vkMapMemory. Instead we can 
+         * copy from the staging buffer -> vertex buffer. We use the src/dst flags for the staging buffer -> vertex
+         * buffer.
          */
         void* data;
         vkMapMemory(device, staging_buffer_memory, 0, buffer_size, 0, &data);
