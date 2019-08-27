@@ -1071,7 +1071,7 @@ namespace vulkan_rendering {
     }
 
     void TriangleApp::create_vertex_buffer() {
-        VkDeviceSize size = sizeof(vertices[0]) * vertices.size();
+        VkDeviceSize buffer_size = sizeof(vertices[0]) * vertices.size();
 
         /**
          * The staging buffer and staging buffer memory allows us to fast copy the original vertbux buffer in temporary 
@@ -1082,8 +1082,8 @@ namespace vulkan_rendering {
          */
         VkBuffer staging_buffer;
         VkDeviceMemory staging_buffer_memory;
-        create_buffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
-                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_buffer_memory);
+        create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_buffer_memory);
 
         /**
          * Store the memory and map it to the data pointer.
@@ -1092,13 +1092,17 @@ namespace vulkan_rendering {
          * this can lead to performance problems since we don't flush the memory immediately.
          */
         void* data;
-        vkMapMemory(device, staging_buffer_memory, 0, size, 0, &data);
-        memcpy(data, vertices.data(), size);
+        vkMapMemory(device, staging_buffer_memory, 0, buffer_size, 0, &data);
+        memcpy(data, vertices.data(), (size_t)buffer_size);
         vkUnmapMemory(device, staging_buffer_memory);
 
         // TODO: Rework the vertex buffer creation to use a staging buffer technique.
-        create_buffer(size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT, vertex_buffer,
-            this->vertex_buffer_memory);
+        create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, vertex_buffer, vertex_buffer_memory);
+
+        copy_buffer(staging_buffer, vertex_buffer, buffer_size);
+        vkDestroyBuffer(device, staging_buffer, nullptr);
+        vkFreeMemory(device, staging_buffer_memory, nullptr);
     }
 
     /**
@@ -1121,21 +1125,21 @@ namespace vulkan_rendering {
     /**
      * More generic function so we can create tons of buffers.
      */
-    void TriangleApp::create_buffer(VkDeviceSize size, VkBufferUsageFlags flags, VkMemoryPropertyFlags props, VkBuffer&
-        buffer, VkDeviceMemory& buffer_mem) {
+    void TriangleApp::create_buffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags props, 
+        VkBuffer& buffer, VkDeviceMemory& buffer_mem) {
 
         VkBufferCreateInfo buffer_info = {};
         buffer_info.sType              = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        buffer_info.size               = sizeof(vertices[0]) * vertices.size();
-        buffer_info.usage              = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+        buffer_info.size               = size;
+        buffer_info.usage              = usage;
         buffer_info.sharingMode        = VK_SHARING_MODE_EXCLUSIVE;
 
-        if (vkCreateBuffer(device, &buffer_info, nullptr, &vertex_buffer) != VK_SUCCESS) {
+        if (vkCreateBuffer(device, &buffer_info, nullptr, &buffer) != VK_SUCCESS) {
             throw std::runtime_error("Failed to create vertex buffer!");
         }
 
         VkMemoryRequirements mem_requirements;
-        vkGetBufferMemoryRequirements(device, vertex_buffer, &mem_requirements);
+        vkGetBufferMemoryRequirements(device, buffer, &mem_requirements);
 
         /**
          * Specify the size and the type which derives from the memory requirements of the vertex buffer.
@@ -1143,14 +1147,13 @@ namespace vulkan_rendering {
         VkMemoryAllocateInfo alloc_info = {};
         alloc_info.sType                = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
         alloc_info.allocationSize       = mem_requirements.size;
-        alloc_info.memoryTypeIndex      = find_memory_type(mem_requirements.memoryTypeBits,
-            VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+        alloc_info.memoryTypeIndex      = find_memory_type(mem_requirements.memoryTypeBits, props);
 
-        if (vkAllocateMemory(device, &alloc_info, nullptr, &vertex_buffer_memory) != VK_SUCCESS) {
+        if (vkAllocateMemory(device, &alloc_info, nullptr, &buffer_mem) != VK_SUCCESS) {
             throw std::runtime_error("Failed to allocate vertex buffer memory!");
         }
 
-        vkBindBufferMemory(device, vertex_buffer, vertex_buffer_memory, 0);
+        vkBindBufferMemory(device, buffer, buffer_mem, 0);
     }
 
     /**
@@ -1168,6 +1171,30 @@ namespace vulkan_rendering {
         VkCommandBuffer cmd_buffer;
         vkAllocateCommandBuffers(device, &alloc_info, &cmd_buffer);
 
-        // TODO: Actually start recording the cmds we intend to do.
+        VkCommandBufferBeginInfo begin_info = {};
+        begin_info.sType                    = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+        begin_info.flags                    = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+       
+        // Start recording the cmd buffer
+        vkBeginCommandBuffer(cmd_buffer, &begin_info);
+       
+        // Do the actual cmd buffer copy!
+        VkBufferCopy copy_region = {};
+        copy_region.size         = size;
+
+        vkCmdCopyBuffer(cmd_buffer, src, dst, 1, &copy_region);
+        vkEndCommandBuffer(cmd_buffer);
+
+        VkSubmitInfo submit_info       = {};
+        submit_info.sType              = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+        submit_info.commandBufferCount = 1;
+        submit_info.pCommandBuffers    = &cmd_buffer;
+
+        // Execute the transfer immediately by using a wait for idle, I could use a fence here and allow waiting 
+        // for the cmd buffer to finish executing too.
+        vkQueueSubmit(graphics_queue, 1, &submit_info, VK_NULL_HANDLE);
+        vkQueueWaitIdle(graphics_queue);
+
+        vkFreeCommandBuffers(device, command_pool, 1, &cmd_buffer);
     }
 }
