@@ -98,6 +98,7 @@ namespace vulkan_rendering {
         create_frame_buffers();
         create_command_pool();
         create_vertex_buffer();
+        create_index_buffer();
         create_command_buffers();
         create_sync_objects();
     }
@@ -119,6 +120,9 @@ namespace vulkan_rendering {
 
     void TriangleApp::cleanup() {
         cleanup_swap_chain();
+
+        vkDestroyBuffer(device, index_buffer, nullptr);
+        vkFreeMemory(device, index_buffer_memory, nullptr);
 
         vkDestroyBuffer(device, vertex_buffer, nullptr);
         vkFreeMemory(device, vertex_buffer_memory, nullptr);
@@ -458,12 +462,12 @@ namespace vulkan_rendering {
         // This is the best case scenario, we have no formats specified
         if (available_formats.size() == 1 && available_formats[0].format == VK_FORMAT_UNDEFINED) {
             // UNORM is the most common format we want to work with, we're not working with SRGB format.
-            return { VK_FORMAT_B8G8R8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
+            return { VK_FORMAT_B8G8R8A8_UNORM, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR };
         }
 
         // Check for a preferred combination
         for (const auto& available_format : available_formats) {
-            if (available_format.format == VK_FORMAT_B8G8R8_UNORM && 
+            if (available_format.format == VK_FORMAT_B8G8R8A8_UNORM && 
                 available_format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) {
                 return available_format;
             }
@@ -483,8 +487,7 @@ namespace vulkan_rendering {
         }
 
         return VK_PRESENT_MODE_FIFO_KHR;
-    }
-
+    } 
     VkExtent2D TriangleApp::choose_swap_extent(const VkSurfaceCapabilitiesKHR& capabilities) {
         if (capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max()) {
             return capabilities.currentExtent;
@@ -904,10 +907,10 @@ namespace vulkan_rendering {
          * Secondary buffers can't be submitted directly but can be called from primary buffers (you can reuse operations on the primary cmd buffers)
          */
         VkCommandBufferAllocateInfo alloc_info = {};
-        alloc_info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-        alloc_info.commandPool = command_pool;
-        alloc_info.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-        alloc_info.commandBufferCount = (uint32_t)command_buffers.size();
+        alloc_info.sType                       = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+        alloc_info.commandPool                 = command_pool;
+        alloc_info.level                       = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+        alloc_info.commandBufferCount          = (uint32_t)command_buffers.size();
 
         if (vkAllocateCommandBuffers(device, &alloc_info, command_buffers.data()) != VK_SUCCESS) {
             throw std::runtime_error("Failed to allocate cmd buffers!");
@@ -952,11 +955,18 @@ namespace vulkan_rendering {
             vkCmdBeginRenderPass(command_buffers[i], &render_pass_info, VK_SUBPASS_CONTENTS_INLINE);
             vkCmdBindPipeline(command_buffers[i], VK_PIPELINE_BIND_POINT_GRAPHICS, graphics_pipeline);
 
+
             VkBuffer vertex_buffers[] = { vertex_buffer };
             VkDeviceSize offsets[]    = { 0 };
             vkCmdBindVertexBuffers(command_buffers[i], 0, 1, vertex_buffers, offsets);
 
-            vkCmdDraw(command_buffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+            // Bind the index buffer, but we need to change the draw command
+            vkCmdBindIndexBuffer(command_buffers[i], index_buffer, 0, VK_INDEX_TYPE_UINT16);
+
+            // NOTE: Previously we wanted to just draw the vertices
+            // vkCmdDraw(command_buffers[i], static_cast<uint32_t>(vertices.size()), 1, 0, 0);
+            
+            vkCmdDrawIndexed(command_buffers[i], static_cast<uint32_t>(indices.size()), 1, 0, 0, 0);
             vkCmdEndRenderPass(command_buffers[i]);
 
             if (vkEndCommandBuffer(command_buffers[i]) != VK_SUCCESS) {
@@ -1204,5 +1214,30 @@ namespace vulkan_rendering {
         vkQueueWaitIdle(graphics_queue);
 
         vkFreeCommandBuffers(device, command_pool, 1, &cmd_buffer);
+    }
+
+    void TriangleApp::create_index_buffer() {
+        // So the size is the number of indices * the size of the index type, in this case we use int16_t cause
+        // we don't need 2^32 - 1 bits of values
+        VkDeviceSize buffer_size = sizeof(indices[0]) * indices.size();
+
+        VkBuffer staging_buffer;
+        VkDeviceMemory staging_buffer_memory;
+
+        create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
+            VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, staging_buffer, staging_buffer_memory);
+
+        void* data;
+        vkMapMemory(device, staging_buffer_memory, 0, buffer_size, 0, &data);
+        memcpy(data, indices.data(), (size_t)buffer_size);
+        vkUnmapMemory(device, staging_buffer_memory);
+
+        create_buffer(buffer_size, VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+            VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT, index_buffer, index_buffer_memory);
+
+        copy_buffer(staging_buffer, index_buffer, buffer_size);
+
+        vkDestroyBuffer(device, staging_buffer, nullptr);
+        vkFreeMemory(device, staging_buffer_memory, nullptr);
     }
 }

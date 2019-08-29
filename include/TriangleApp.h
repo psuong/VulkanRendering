@@ -65,6 +65,8 @@ namespace vulkan_rendering {
             size_t current_frame = 0;
             VkBuffer vertex_buffer;
             VkDeviceMemory vertex_buffer_memory;
+            VkBuffer index_buffer;
+            VkDeviceMemory index_buffer_memory;
 
             // Functions
             void init_window();
@@ -113,6 +115,7 @@ namespace vulkan_rendering {
                 VkBuffer& buffer, VkDeviceMemory& buffer_mem);
             void copy_buffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
 
+            void create_index_buffer();
     };
 }
 
