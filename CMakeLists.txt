@@ -9,6 +9,7 @@ set(SOURCES
     include/TriangleApp.h
     include/QueueFamilyIndices.h
     include/FileHelper.h
+    include/UniformBufferObject.h
     src/main.cpp
     src/ExtensionValidation.cpp
     src/TriangleApp.cpp)

@@ -6,6 +6,7 @@
 #include "../include/TriangleApp.h"
 #include "../include/FileHelper.h"
 #include "../include/Vertex.h"
+#include "../include/UniformBufferObject.h"
 
 #include <algorithm>
 #include <GLFW/glfw3.h>
@@ -94,6 +95,7 @@ namespace vulkan_rendering {
         create_swap_chain();
         create_image_views();
         create_render_pass();
+        create_descriptor_set_layout();
         create_graphics_pipeline();
         create_frame_buffers();
         create_command_pool();
@@ -120,6 +122,9 @@ namespace vulkan_rendering {
 
     void TriangleApp::cleanup() {
         cleanup_swap_chain();
+
+        // Release the descriptor layouts when we quit, it should stay as long as we need it to run.
+        vkDestroyDescriptorSetLayout(device, descriptor_set_layout, nullptr);
 
         vkDestroyBuffer(device, index_buffer, nullptr);
         vkFreeMemory(device, index_buffer_memory, nullptr);
@@ -1239,5 +1244,32 @@ namespace vulkan_rendering {
 
         vkDestroyBuffer(device, staging_buffer, nullptr);
         vkFreeMemory(device, staging_buffer_memory, nullptr);
+    }
+
+    void TriangleApp::create_descriptor_set_layout() {
+        VkDescriptorSetLayoutBinding ubo_layout_binding = {};
+
+        // What kind of binding are we using
+        ubo_layout_binding.binding = 0;
+
+        // What is its descriptor? It is possible to use an array of ubos (e.g. representing bones)
+        ubo_layout_binding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        ubo_layout_binding.descriptorCount = 1;
+
+        // Which shader stages is the descriptor going to be referened? They can be a combination of flags
+        // or we can use all shader stages, but for our needs we just want the vertex bit.
+        ubo_layout_binding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT;
+
+        // TODO: Look at later
+        ubo_layout_binding.pImmutableSamplers = nullptr;
+
+        VkDescriptorSetLayoutCreateInfo layout_info = {};
+        layout_info.sType                           = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+        layout_info.bindingCount                    = 1;
+        layout_info.pBindings                       = &ubo_layout_binding;
+
+        if (!vkCreateDescriptorSetLayout(device, &layout_info, nullptr, &descriptor_set_layout)) {
+            throw std::runtime_error("Failed to create descriptor set layout!");
+        }
     }
 }

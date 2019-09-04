@@ -52,6 +52,7 @@ namespace vulkan_rendering {
             VkFormat swap_chain_image_format;
             VkExtent2D swap_chain_extent;
             std::vector<VkImageView> swap_chain_image_views;
+            VkDescriptorSetLayout descriptor_set_layout; // newly added
             VkPipelineLayout pipeline_layout;
             VkRenderPass render_pass;
             VkPipeline graphics_pipeline;
@@ -116,6 +117,8 @@ namespace vulkan_rendering {
             void copy_buffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
 
             void create_index_buffer();
+
+            void create_descriptor_set_layout();
     };
 }
 
