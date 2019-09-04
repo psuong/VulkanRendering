@@ -101,6 +101,7 @@ namespace vulkan_rendering {
         create_command_pool();
         create_vertex_buffer();
         create_index_buffer();
+        create_uniform_buffers();
         create_command_buffers();
         create_sync_objects();
     }

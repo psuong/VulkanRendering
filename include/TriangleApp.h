@@ -69,6 +69,15 @@ namespace vulkan_rendering {
             VkBuffer index_buffer;
             VkDeviceMemory index_buffer_memory;
 
+            /**
+             * The whole point of this is to support what happens if we have multiple frames in flight. While we can use 
+             * use a staging buffer, we're going to be updating the buffer every frame. So the approach is to store
+             * multiple buffers at the same time. If we had one buffer, we dont want to change the buffer while another 
+             * frame is still reading it, so we "queue" up these frames.
+             */
+            std::vector<VkBuffer> uniform_buffers;
+            std::vector<VkDeviceMemory> uniform_buffers_memory;
+
             // Functions
             void init_window();
             void init_vulkan();
@@ -117,8 +126,8 @@ namespace vulkan_rendering {
             void copy_buffer(VkBuffer src, VkBuffer dst, VkDeviceSize size);
 
             void create_index_buffer();
-
             void create_descriptor_set_layout();
+            void create_uniform_buffers();
     };
 }
 
