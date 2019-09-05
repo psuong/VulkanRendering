@@ -95,13 +95,13 @@ namespace vulkan_rendering {
         create_swap_chain();
         create_image_views();
         create_render_pass();
-        create_descriptor_set_layout();
+        // create_descriptor_set_layout();
         create_graphics_pipeline();
         create_frame_buffers();
         create_command_pool();
         create_vertex_buffer();
         create_index_buffer();
-        create_uniform_buffers();
+        // create_uniform_buffers();
         create_command_buffers();
         create_sync_objects();
     }
@@ -614,8 +614,9 @@ namespace vulkan_rendering {
     }
 
     void TriangleApp::create_graphics_pipeline() {
-        auto vert_shader_code = read_file("/home/psuong/Documents/Projects/VulkanRendering/shaders/vert.spv");
-        auto frag_shader_code = read_file("/home/psuong/Documents/Projects/VulkanRendering/shaders/frag.spv");
+        // TODO: Try to read relative directories instead or get the full path to the shaders somehow.
+        auto vert_shader_code = read_file("/Users/psuong/Documents/Projects/VulkanRendering/shaders/vert.spv");
+        auto frag_shader_code = read_file("/Users/psuong/Documents/Projects/VulkanRendering/shaders/frag.spv");
 
         VkShaderModule vert_shader_module = create_shader_module(vert_shader_code);
         VkShaderModule frag_shader_module = create_shader_module(frag_shader_code);
@@ -1272,5 +1273,9 @@ namespace vulkan_rendering {
         if (!vkCreateDescriptorSetLayout(device, &layout_info, nullptr, &descriptor_set_layout)) {
             throw std::runtime_error("Failed to create descriptor set layout!");
         }
+    }
+
+    void TriangleApp::create_uniform_buffers() {
+        throw std::runtime_error("create_uniform_buffers() not implemented!");
     }
 }

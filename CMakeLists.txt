@@ -16,7 +16,7 @@ set(SOURCES
 
 include_directories("$ENV{VULKAN_SDK}/include")
 link_directories("$ENV{VULKAN_SDK}/lib") 
-link_directories("$ENV{VULKAN_SDK}/etc/explicit_layer.d")
+link_directories("$ENV{VULKAN_SDK}/etc/vulkan/explicit_layer.d")
 
 find_package(glfw3 3.3 REQUIRED)
 

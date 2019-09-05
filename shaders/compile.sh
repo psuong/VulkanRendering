@@ -1,4 +1,6 @@
 #!/bin/bash
 
-~/vulkan/1.1.106.0/x86_64/bin/glslangValidator -V shader.vert
-~/vulkan/1.1.106.0/x86_64/bin/glslangValidator -V shader.frag
+vulkan_sdk=$VULKAN_SDK
+
+$vulkan_sdk/bin/glslangValidator -V shader.vert
+$vulkan_sdk/bin/glslangValidator -V shader.frag
