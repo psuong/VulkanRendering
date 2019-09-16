@@ -128,6 +128,7 @@ namespace vulkan_rendering {
             void create_index_buffer();
             void create_descriptor_set_layout();
             void create_uniform_buffers();
+            void update_uniform_buffer(uint32_t current_img);
     };
 }
 

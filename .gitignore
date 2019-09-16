@@ -12,3 +12,6 @@ compile_commands.json
 
 # CCLS Cache #
 *.ccls-cache
+
+# Clangd Cache #
+*.clangd*

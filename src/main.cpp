@@ -4,6 +4,7 @@
 #include <fstream>
 
 int main() {
+    
     vulkan_rendering::TriangleApp app;
 
     try {

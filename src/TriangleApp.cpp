@@ -9,7 +9,10 @@
 #include "../include/UniformBufferObject.h"
 
 #include <algorithm>
+#include <chrono>
 #include <GLFW/glfw3.h>
+#include <glm/glm.hpp>
+#include <glm/gtc/matrix_transform.hpp>
 #include <iostream>
 #include <set>
 #include <string.h>
@@ -45,8 +48,6 @@ namespace vulkan_rendering {
             func(instance, debug_messenger, p_allocator);
         }
     }
-
-
 
     /**
      * VKAPI_ATTR and VKAPI_CALL would ensures that callback called has the right signature for Vulkan to call it.
@@ -95,13 +96,13 @@ namespace vulkan_rendering {
         create_swap_chain();
         create_image_views();
         create_render_pass();
-        // create_descriptor_set_layout();
+        create_descriptor_set_layout();
         create_graphics_pipeline();
         create_frame_buffers();
         create_command_pool();
         create_vertex_buffer();
         create_index_buffer();
-        // create_uniform_buffers();
+        create_uniform_buffers();
         create_command_buffers();
         create_sync_objects();
     }
@@ -170,6 +171,11 @@ namespace vulkan_rendering {
         }
 
         vkDestroySwapchainKHR(device, swap_chain, nullptr);
+
+        for (size_t i = 0; i < swap_chain_images.size(); i++) {
+            vkDestroyBuffer(device, uniform_buffers[i], nullptr);
+            vkFreeMemory(device, uniform_buffers_memory[i], nullptr);
+        }
     }
     
     // Vulkan functions
@@ -990,7 +996,7 @@ namespace vulkan_rendering {
         vkWaitForFences(device, 1, &flight_fences[current_frame], VK_TRUE, std::numeric_limits<uint64_t>::max());
 
         uint32_t img_index;
-        VkResult result = vkAcquireNextImageKHR(device, swap_chain, std::numeric_limits<uint64_t>::max(), 
+        VkResult result = vkAcquireNextImageKHR(device, swap_chain, UINT64_MAX,
             img_available_semaphores[current_frame], VK_NULL_HANDLE, &img_index);
 
         if (result == VK_ERROR_OUT_OF_DATE_KHR) {
@@ -999,6 +1005,9 @@ namespace vulkan_rendering {
         } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR) {
             throw std::runtime_error("Failed to acquire swap chain img!");
         }
+        
+        // TODO: Add the uniform buffer update
+        update_uniform_buffer(img_index);
 
         VkSubmitInfo submit_info = {};
         submit_info.sType        = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1084,7 +1093,8 @@ namespace vulkan_rendering {
         create_render_pass();
         create_graphics_pipeline();
         create_frame_buffers();
-        create_frame_buffers();
+        create_uniform_buffers();
+        create_command_buffers();
     }
 
     /**
@@ -1276,6 +1286,21 @@ namespace vulkan_rendering {
     }
 
     void TriangleApp::create_uniform_buffers() {
-        throw std::runtime_error("create_uniform_buffers() not implemented!");
+        VkDeviceSize buffer_size = sizeof(UniformBufferObject);
+        uniform_buffers.resize(swap_chain_images.size());
+        uniform_buffers_memory.resize(swap_chain_images.size());
+
+        for (size_t i = 0; i < swap_chain_images.size(); i++) {
+            create_buffer(buffer_size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | 
+                VK_MEMORY_PROPERTY_HOST_COHERENT_BIT, uniform_buffers[i], uniform_buffers_memory[i]);
+        }
+    }
+
+    void TriangleApp::update_uniform_buffer(uint32_t current_img) {
+        static auto start_time = std::chrono::high_resolution_clock::now();
+
+        auto current_time = std::chrono::high_resolution_clock::now();
+        float time = std::chrono::duration<float, std::chrono::seconds::period>(current_time - start_time).count();
+        update_uniform_buffer(1);
     }
 }
