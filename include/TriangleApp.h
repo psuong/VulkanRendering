@@ -68,6 +68,7 @@ namespace vulkan_rendering {
             VkDeviceMemory vertex_buffer_memory;
             VkBuffer index_buffer;
             VkDeviceMemory index_buffer_memory;
+            VkDescriptorPool descriptor_pool;
 
             /**
              * The whole point of this is to support what happens if we have multiple frames in flight. While we can use 
@@ -129,6 +130,9 @@ namespace vulkan_rendering {
             void create_descriptor_set_layout();
             void create_uniform_buffers();
             void update_uniform_buffer(uint32_t current_img);
+
+            void create_descriptor_pool();
+            void create_descriptor_sets();
     };
 }
 

@@ -1,6 +1,8 @@
-﻿#include "/usr/local/Cellar/glm/0.9.9.5/include/glm/ext/matrix_transform.hpp"
+﻿#include "/Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform/Developer/SDKs/MacOSX.sdk/usr/include/_types/_uint32_t.h"
+#include "/usr/local/Cellar/glm/0.9.9.5/include/glm/ext/matrix_transform.hpp"
 #include "vulkan/vulkan_core.h"
 #include <cstring>
+#include <stdexcept>
 #define GLFW_INCLUDE_VULKAN
 
 #include "../include/ExtensionValidation.h"
@@ -106,6 +108,8 @@ namespace vulkan_rendering {
         create_vertex_buffer();
         create_index_buffer();
         create_uniform_buffers();
+        create_descriptor_pool();
+        create_descriptor_sets();
         create_command_buffers();
         create_sync_objects();
     }
@@ -179,6 +183,8 @@ namespace vulkan_rendering {
             vkDestroyBuffer(device, uniform_buffers[i], nullptr);
             vkFreeMemory(device, uniform_buffers_memory[i], nullptr);
         }
+
+        vkDestroyDescriptorPool(device, descriptor_pool, nullptr);
     }
     
     // Vulkan functions
@@ -1097,6 +1103,8 @@ namespace vulkan_rendering {
         create_graphics_pipeline();
         create_frame_buffers();
         create_uniform_buffers();
+        create_descriptor_pool();
+        create_descriptor_sets();
         create_command_buffers();
     }
 
@@ -1317,5 +1325,26 @@ namespace vulkan_rendering {
         vkMapMemory(device, uniform_buffers_memory[current_img], 0, sizeof(ubo), 0, &data);
         memcpy(data, &ubo, sizeof(ubo));
         vkUnmapMemory(device, uniform_buffers_memory[current_img]);
+    }
+
+    void TriangleApp::create_descriptor_pool() {
+        VkDescriptorPoolSize pool_size = {};
+        // Create the descriptors for every frame in the swap_chain_images
+        pool_size.type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+        pool_size.descriptorCount = static_cast<uint32_t>(swap_chain_images.size());
+
+        VkDescriptorPoolCreateInfo pool_info = {};
+        pool_info.sType                      = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+        pool_info.poolSizeCount              = 1;
+        pool_info.pPoolSizes                 = &pool_size;
+        pool_info.maxSets                    = static_cast<uint32_t>(swap_chain_images.size());
+
+        if (vkCreateDescriptorPool(device, &pool_info, nullptr, &descriptor_pool)) {
+            throw std::runtime_error("Failed to create descriptor pool!");
+        }
+    }
+
+    void TriangleApp::create_descriptor_sets() {
+        throw std::runtime_error("Not implemented!");
     }
 }
